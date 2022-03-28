@@ -1,0 +1,5 @@
+pytest==7.1.1
+yapf==0.32
+pytest-asyncio==0.18.3
+pytest-cover==3.0.0
+pre-commit

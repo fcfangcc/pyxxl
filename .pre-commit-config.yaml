@@ -1,0 +1,13 @@
+repos:
+-   repo: local
+    hooks:
+    -   id: yapf
+        name: yapf
+        entry: yapf -i -r --style=.style.yapf pyxxl
+        language: system
+        types: [python]
+    -   id: pylint
+        name: pylint
+        entry: pylint --rcfile=pylintrc
+        language: system
+        types: [python]
