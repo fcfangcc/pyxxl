@@ -40,8 +40,11 @@ class XXL:
 
     async def registry(self, key, value):
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
-        await self._post("/registry", payload)
-        logger.debug("registry successful. %s" % payload)
+        try:
+            await self._post("/registry", payload, retry_times=3)
+            logger.debug("registry successful. %s" % payload)
+        except XXLRegisterError as e:
+            logger.error("registry executor failed. %s", e.message)
 
     async def registryRemove(self, key, value):
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
@@ -58,9 +61,10 @@ class XXL:
         await self._post("/callback", payload)
         logger.debug("callback successful. %s" % payload)
 
-    async def _post(self, path: str, payload: dict) -> Response:
+    async def _post(self, path: str, payload: dict, retry_times=None) -> Response:
         times = 1
-        while times <= self.retry_times or self.retry_times == 0:
+        retry_times = retry_times or self.retry_times
+        while times <= retry_times or retry_times == 0:
             try:
                 async with self.session.post(self.admin_url + path, json=payload, headers=self.headers) as response:
                     if response.status == 200:
