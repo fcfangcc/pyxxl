@@ -41,7 +41,7 @@ class XXL:
     async def registry(self, key, value):
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
         try:
-            await self._post("/registry", payload, retry_times=3)
+            await self._post("/registry", payload, retry_times=1)
             logger.debug("registry successful. %s" % payload)
         except XXLRegisterError as e:
             logger.error("registry executor failed. %s", e.message)

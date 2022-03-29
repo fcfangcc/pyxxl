@@ -1,7 +1,8 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 import asyncio
 import logging
 import time
+import functools
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 from pyxxl import error
@@ -13,13 +14,51 @@ from pyxxl.schema import RunData, HandlerInfo
 logger = logging.getLogger("pyxxl")
 
 
+class JobHandler:
+    _handlers: Dict[str, HandlerInfo] = {}
+
+    def register(self, *args, name=None, replace=False):
+        """将函数注册到可执行的job中,如果其他地方要调用该方法,replace修改为True"""
+
+        def func_wrapper(func):
+            handler_name = name or func.__name__
+            if handler_name in self._handlers and replace is False:
+                raise error.JobRegisterError("handler %s already registered." % handler_name)
+            self._handlers[handler_name] = HandlerInfo(handler=func)
+            logger.info("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
+
+            if asyncio.iscoroutinefunction(func):
+
+                @functools.wraps(func)
+                async def inner_wrapper(*args, **kwargs):
+                    return await func(*args, **kwargs)
+            else:
+
+                @functools.wraps(func)
+                def inner_wrapper(*args, **kwargs):
+                    return func(*args, **kwargs)
+
+            return inner_wrapper
+
+        if len(args) == 1:
+            return func_wrapper(args[0])
+
+        return func_wrapper
+
+    def get(self, name: str) -> Optional[HandlerInfo]:
+        return self._handlers.get(name, None)
+
+    def handlers(self) -> List[str]:
+        return list(self._handlers.keys())
+
+
 class Executor:
 
     def __init__(
         self,
         xxl_client: XXL,
         *,
-        handlers=None,
+        handler: JobHandler = None,
         loop=None,
         max_workers=20,
         task_timeout=60 * 60,
@@ -30,7 +69,7 @@ class Executor:
         self.tasks: Dict[int, asyncio.Task] = {}
         self.queue: Dict[int, List[RunData]] = defaultdict(list)
         self.lock = asyncio.Lock()
-        self.handlers = handlers
+        self.handler: JobHandler = handler or JobHandler()
         self.thread_pool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="pyxxl_pool")
         self.task_timeout = task_timeout
         # 串行队列的最长长度
@@ -41,7 +80,7 @@ class Executor:
             task.cancel()
 
     async def run_job(self, run_data: RunData):
-        handler_obj: HandlerInfo = self.handlers.get(run_data.executorHandler, None)
+        handler_obj = self.handler.get(run_data.executorHandler)
         if not handler_obj:
             logger.warning("handler %s not found." % run_data.executorHandler)
             raise error.JobNotFoundError("handler %s not found." % run_data.executorHandler)
@@ -136,3 +175,6 @@ class Executor:
                 await asyncio.wait(self.tasks.values())
 
         await asyncio.wait_for(_graceful_close(), timeout=timeout)
+
+    def reset_handler(self, handler: JobHandler):
+        self.handler = handler

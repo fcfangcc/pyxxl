@@ -3,10 +3,9 @@ import logging
 import asyncio
 from aiohttp import web
 from pyxxl.xxl_client import XXL
-from pyxxl.execute import Executor
+from pyxxl.execute import Executor, JobHandler
 from pyxxl.utils import ensure_host
 from pyxxl.service import create_app
-from pyxxl.register import HANDLERS
 
 logger = logging.getLogger("pyxxl.run")
 
@@ -24,7 +23,7 @@ class PyxxlRunner:
         access_token: str = None,
         host=None,
         port=9999,
-        handlers=None,
+        handler: JobHandler = None
     ):
         self.host = ensure_host(host)
         self.port = port
@@ -32,7 +31,7 @@ class PyxxlRunner:
         self.executor_name = executor_name
         self.executor_baseurl = "http://{host}:{port}".format(host=self.host, port=self.port)
         self.access_token = access_token
-        self.handlers = handlers or HANDLERS
+        self.handler = handler or JobHandler()
 
     async def _register_task(self, xxl_client: XXL):
         while True:
@@ -41,7 +40,7 @@ class PyxxlRunner:
 
     async def _on_startup(self):
         self.xxl_client = XXL(self.xxl_admin_baseurl, token=self.access_token)
-        self.executor = Executor(self.xxl_client, handlers=self.handlers)
+        self.executor = Executor(self.xxl_client, handler=self.handler)
         self.register_task = asyncio.create_task(self._register_task(self.xxl_client), name="pyxxl-register")
 
     # pylint: disable=unused-argument
@@ -59,7 +58,7 @@ class PyxxlRunner:
         app["executor"] = self.executor
         app["register_task"] = self.register_task
         logger.info("init executor web server.")
-        logger.info("register with handlers %s", list(HANDLERS.keys()))
+        logger.info("register with handlers %s", list(self.executor.handler.handlers()))
 
     def on_cleanup(self, loop=None):
         loop = loop or asyncio.get_event_loop()

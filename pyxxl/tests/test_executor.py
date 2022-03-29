@@ -1,26 +1,26 @@
-import time
 import asyncio
+import time
 import pytest
-
-from pyxxl import job_hander
-from pyxxl.execute import Executor
+from pyxxl.execute import Executor, JobHandler
 from pyxxl.enum import executorBlockStrategy
 from pyxxl.error import JobDuplicateError, JobNotFoundError
 from pyxxl.schema import RunData
 
+job_handler = JobHandler()
 
-@job_hander
+
+@job_handler.register
 async def pytest_executor_5():
     await asyncio.sleep(5)
     return "成功30"
 
 
-@job_hander
+@job_handler.register
 async def pytest_executor_error():
     assert 1 == 2
 
 
-@job_hander
+@job_handler.register
 def pytest_executor_3():
     time.sleep(3)
     return "成功30"
@@ -28,6 +28,7 @@ def pytest_executor_3():
 
 @pytest.mark.asyncio
 async def test_runner_not_found(executor: Executor):
+    executor.reset_handler(job_handler)
     with pytest.raises(JobNotFoundError):
         await executor.run_job(
             RunData(
@@ -44,6 +45,7 @@ async def test_runner_not_found(executor: Executor):
 
 @pytest.mark.asyncio
 async def test_runner_callback(executor: Executor):
+    executor.reset_handler(job_handler)
     data = RunData(
         **dict(
             logId=1,
@@ -70,6 +72,7 @@ async def test_runner_callback(executor: Executor):
 
 @pytest.mark.asyncio
 async def test_runner_cancel(executor: Executor):
+    executor.reset_handler(job_handler)
     await executor.run_job(
         RunData(
             **dict(
@@ -98,6 +101,7 @@ async def test_runner_cancel(executor: Executor):
 
 @pytest.mark.asyncio
 async def test_runner_SERIAL_EXECUTION(executor: Executor):
+    executor.reset_handler(job_handler)
     jobId = 11
     await executor.run_job(
         RunData(
@@ -137,6 +141,7 @@ async def test_runner_SERIAL_EXECUTION(executor: Executor):
 
 @pytest.mark.asyncio
 async def test_runner_DISCARD_LATER(executor: Executor):
+    executor.reset_handler(job_handler)
     jobId = 31
     executor.xxl_client.callback_result.clear()
     await executor.run_job(
@@ -167,6 +172,7 @@ async def test_runner_DISCARD_LATER(executor: Executor):
 
 @pytest.mark.asyncio
 async def test_runner_COVER_EARLY(executor: Executor):
+    executor.reset_handler(job_handler)
     jobId = 41
     executor.xxl_client.callback_result.clear()
     await executor.run_job(

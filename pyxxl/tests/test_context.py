@@ -1,20 +1,19 @@
 import pytest
 
-from pyxxl import job_hander
 from pyxxl.execute import Executor
 from pyxxl.enum import executorBlockStrategy
 from pyxxl.schema import RunData
 from pyxxl.ctx import g
 
 
-@job_hander
-async def text_ctx():
-    logId = g.xxl_run_data.logId
-    assert logId == 1
-
-
 @pytest.mark.asyncio
 async def test_runner_callback(executor: Executor):
+
+    @executor.handler.register
+    async def text_ctx():
+        logId = g.xxl_run_data.logId
+        assert logId == 1
+
     data = RunData(
         **dict(
             logId=1,

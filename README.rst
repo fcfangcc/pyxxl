@@ -8,24 +8,26 @@ xxl-jobs 的python客户端实现
 
     pip install pyxxl
 
+具体可以查看example文件夹下面的2个例子
+
 .. code:: python
 
     import logging
     import asyncio
 
-    from pyxxl import run_executor, job_hander
+    from pyxxl import PyxxlRunner, JobHandler
 
     logger = logging.getLogger("pyxxl")
     logger.setLevel(logging.DEBUG)
+    xxl_handler = JobHandler()
 
-
-    @job_hander
+    @xxl_handler.register
     async def test_task():
         await asyncio.sleep(30)
         return "成功30"
 
 
-    @job_hander(name="xxxxx")
+    @xxl_handler.register(name="xxxxx")
     @xxxxx # 自己定义的装饰器必须放在下面
     async def abc():
         await asyncio.sleep(3)
@@ -34,9 +36,10 @@ xxl-jobs 的python客户端实现
 
     runner = PyxxlRunner(
         "http://localhost:8080/xxl-job-admin/api/",
-        "test",
+        executor_name="xxl-job-executor-sample",
         port=9999,
         host="172.17.0.1",
+        handler=xxl_handler,
     )
     runner.run_executor()
 

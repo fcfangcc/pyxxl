@@ -1,34 +1,35 @@
 import pytest
 
-from pyxxl import job_hander
 from pyxxl.error import JobRegisterError
+from pyxxl.execute import Executor
 
 
+# pylint: disable=function-redefined
 @pytest.mark.asyncio
-async def test_hander_error():
+async def test_hander_error(executor: Executor):
     with pytest.raises(JobRegisterError):
 
-        @job_hander
-        def text_ctx():
+        @executor.handler.register
+        def test_dup_error():
             return 1
 
-        @job_hander
-        def test_ctx():
+        @executor.handler.register
+        def test_dup_error():
             return 1
 
 
 # pylint: disable=function-redefined
 @pytest.mark.asyncio
-async def test_hander():
+async def test_hander(executor: Executor):
 
-    @job_hander
+    @executor.handler.register
     def text_hander1():
         return 1
 
-    @job_hander(replace=True)
+    @executor.handler.register(replace=True)
     async def text_hander1():
         return 1
 
-    @job_hander(name="text_hander_dup")
+    @executor.handler.register(name="text_hander_dup")
     def text_hander1():
         return 1
