@@ -14,12 +14,11 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Quality Assurance',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
     keywords=['xxl'],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=['aiohttp<4.0.0'],
 )
