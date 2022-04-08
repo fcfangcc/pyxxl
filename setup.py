@@ -5,7 +5,7 @@ with open('README.rst', 'r') as f:
 
 setup(
     name='pyxxl',
-    version='0.1.2',
+    version='0.1.3',
     description='A Python executor for XXL-jobs',
     long_description=LONG_DESCRIPTION,
     url='https://github.com/fcfangcc/pyxxl',
