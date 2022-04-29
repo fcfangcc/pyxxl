@@ -18,13 +18,23 @@ class PyxxlRunner:
 
     def __init__(
         self,
-        xxl_admin_baseurl,
+        xxl_admin_baseurl: str,
         executor_name: str,
+        handler: JobHandler,
         access_token: str = None,
         host=None,
         port=9999,
-        handler: JobHandler = None
     ):
+        """
+
+        Args:
+            xxl_admin_baseurl (str): xxl-admin服务端暴露的restful接口url(如http://localhost:8080/xxl-job-admin/api/)
+            executor_name (str): xxl-admin上定义的执行器名称,必须一致否则无法注册(如xxl-job-executor-sample)
+            handler (JobHandler, optional): 执行器支持的job,没有预先定义的job名称也会执行失败
+            access_token (str, optional): xxl-admin的认证token,如果没有开启不需要传. Defaults to None.
+            host (_type_, optional): 执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址. Defaults to None.
+            port (int, optional): 执行器绑定的http服务的端口,作用同host. Defaults to 9999.
+        """
         self.host = ensure_host(host)
         self.port = port
         self.xxl_admin_baseurl = xxl_admin_baseurl
