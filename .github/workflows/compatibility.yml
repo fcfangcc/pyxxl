@@ -24,17 +24,13 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Install poetry
+      run: python -m pip install poetry
+
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-    - name: Lint with yapf
-      run: |
-        yapf -r -d --style=.style.yapf pyxxl
-    - name: Lint with pylint
-      run: |
-        pylint --rcfile=pylintrc pyxxl
+      run: poetry install
+        
     - name: Test with pytest
       run: |
-        pytest pyxxl/tests
+        poetry run pytest pyxxl/tests
