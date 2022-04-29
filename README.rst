@@ -1,5 +1,16 @@
 xxl-jobs 的python客户端实现
 =============================
+
+.. raw:: html
+
+    <a href="https://pypi.org/project/pyxxl" target="_blank">
+        <img src="https://img.shields.io/pypi/v/pyxxl?color=%2334D058&label=pypi%20package" alt="Package version">
+    </a>
+    <a href="https://pypi.org/project/pyxxl" target="_blank">
+        <img src="https://img.shields.io/pypi/pyversions/pyxxl.svg?color=%2334D058" alt="Supported Python versions">
+    </a>
+
+
 使用pyxxl可以方便的把Python写的方法注册到xxl-job中，使用xxl-job-admin管理Python定时任务和周期任务
 
 如何使用
