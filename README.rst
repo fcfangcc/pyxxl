@@ -72,9 +72,11 @@ xxl-jobs 的python客户端实现
 =====================
 启动执行器
 =====================
-.. code:: python
+.. code:: shell
 
-    python run.py
+    poetry install
+    # 修改app.py中相关的配置信息,然后启动
+    poetry run python example/app.py
 
 
 ======================
