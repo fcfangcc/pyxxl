@@ -1,10 +1,13 @@
 import asyncio
 import time
+
 import pytest
-from pyxxl.execute import Executor, JobHandler
+
 from pyxxl.enum import executorBlockStrategy
 from pyxxl.error import JobDuplicateError, JobNotFoundError
+from pyxxl.execute import Executor, JobHandler
 from pyxxl.schema import RunData
+
 
 job_handler = JobHandler()
 

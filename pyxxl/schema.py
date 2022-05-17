@@ -1,6 +1,6 @@
 from asyncio import iscoroutinefunction
-from typing import Callable, Optional
 from dataclasses import dataclass
+from typing import Callable, Optional
 
 
 @dataclass

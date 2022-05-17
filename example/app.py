@@ -1,7 +1,8 @@
-import logging
 import asyncio
+import logging
 
 from pyxxl import PyxxlRunner
+
 
 logger = logging.getLogger("pyxxl")
 handler = logging.StreamHandler()

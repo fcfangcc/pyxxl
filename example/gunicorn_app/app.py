@@ -1,7 +1,10 @@
 import asyncio
 import logging
+
 from fastapi import FastAPI
+
 from pyxxl import JobHandler
+
 
 logger = logging.getLogger("pyxxl")
 handler = logging.StreamHandler()
