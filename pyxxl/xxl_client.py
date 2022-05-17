@@ -1,7 +1,10 @@
-import logging
 import asyncio
+import logging
+
 import aiohttp
-from pyxxl.error import XXLRegisterError, ClientError
+
+from pyxxl.error import ClientError, XXLRegisterError
+
 
 logger = logging.getLogger("pyxxl")
 
@@ -18,7 +21,6 @@ class Response:
 
 
 class XXL:
-
     def __init__(
         self,
         admin_url: str,
@@ -29,7 +31,7 @@ class XXL:
         **kwargs,
     ):
         self.loop = loop or asyncio.get_event_loop()
-        kwargs['loop'] = self.loop
+        kwargs["loop"] = self.loop
         # https://docs.aiohttp.org/en/stable/client_reference.html#baseconnector
         self.conn = aiohttp.TCPConnector(**kwargs)
         self.session: aiohttp.ClientSession = aiohttp.ClientSession(connector=self.conn)
@@ -52,12 +54,14 @@ class XXL:
         logger.info("registryRemove successful. %s" % payload)
 
     async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: str = None):
-        payload = [{
-            "logId": log_id,
-            "logDateTim": timestamp,
-            "handleCode": code,
-            "handleMsg": msg,
-        }]
+        payload = [
+            {
+                "logId": log_id,
+                "logDateTim": timestamp,
+                "handleCode": code,
+                "handleMsg": msg,
+            }
+        ]
         await self._post("/callback", payload)
         logger.debug("callback successful. %s" % payload)
 
@@ -74,10 +78,10 @@ class XXL:
                         return r
                     raise XXLRegisterError(await response.text())
             except aiohttp.ClientConnectionError as e:
-                logger.error(f'Connection error {times} times: {str(e)}, retry afert {self.retry_interval}')
+                logger.error(f"Connection error {times} times: {str(e)}, retry afert {self.retry_interval}")
                 await asyncio.sleep(self.retry_interval)
                 times += 1
-        raise ClientError('Connection error, retry times {}'.format(times))
+        raise ClientError("Connection error, retry times {}".format(times))
 
     async def close(self):
         await self.session.close()

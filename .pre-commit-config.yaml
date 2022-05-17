@@ -1,13 +1,57 @@
+ci:
+  autofix_prs: false
+
 repos:
--   repo: local
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
     hooks:
-    -   id: yapf
-        name: yapf
-        entry: poetry run yapf -i -r --style=.style.yapf pyxxl
-        language: system
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+        exclude: ^.*\.egg-info/
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: pretty-format-json
+        args: [--autofix, --no-ensure-ascii, --no-sort-keys]
+      - id: check-ast
+      - id: debug-statements
+      - id: check-docstring-first
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: python-check-mock-methods
+      - id: python-use-type-annotations
+      - id: python-check-blanket-type-ignore
+      - id: python-check-blanket-noqa
+
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: "isort (python)"
         types: [python]
-    -   id: pylint
-        name: pylint
-        entry: poetry run pylint --rcfile=pylintrc
-        language: system
-        types: [python]
+
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v0.942
+  #   hooks:
+  #     - id: mypy
+  #       pass_filenames: false
+  #       additional_dependencies:
+  #         - types-requests
+  #         - pydantic
+  #         - sqlalchemy-stubs

@@ -1,9 +1,5 @@
-from pathlib import Path
-import sys
 import pytest
 
-sys.path.insert(0, Path(__file__).parent.parent.parent.absolute().as_posix())
-# pylint: disable=wrong-import-position,wrong-import-order
 from pyxxl.execute import Executor
 from pyxxl.xxl_client import XXL
 
