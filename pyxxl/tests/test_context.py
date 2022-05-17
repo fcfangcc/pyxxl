@@ -1,14 +1,13 @@
 import pytest
 
-from pyxxl.execute import Executor
-from pyxxl.enum import executorBlockStrategy
-from pyxxl.schema import RunData
 from pyxxl.ctx import g
+from pyxxl.enum import executorBlockStrategy
+from pyxxl.execute import Executor
+from pyxxl.schema import RunData
 
 
 @pytest.mark.asyncio
 async def test_runner_callback(executor: Executor):
-
     @executor.handler.register
     async def text_ctx():
         logId = g.xxl_run_data.logId

@@ -21,7 +21,7 @@ if [ ! "$(docker ps -q -f "name=xxl-db")" ]];then
     done
     echo 'init mysql database ok'
 
-else 
+else
     echo 'xxl-db container already existed.'
 fi
 

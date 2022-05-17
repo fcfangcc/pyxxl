@@ -1,11 +1,15 @@
-from multiprocessing import Process
-import logging
 import asyncio
+import logging
+
+from multiprocessing import Process
+
 from aiohttp import web
-from pyxxl.xxl_client import XXL
+
 from pyxxl.execute import Executor, JobHandler
-from pyxxl.utils import ensure_host
 from pyxxl.service import create_app
+from pyxxl.utils import ensure_host
+from pyxxl.xxl_client import XXL
+
 
 logger = logging.getLogger("pyxxl.run")
 
@@ -83,7 +87,6 @@ class PyxxlRunner:
         web.run_app(app, port=self.port, host=self.host, handle_signals=handle_signals)
 
     def run_with_daemon(self):
-
         def _runner():
             self.run_executor(handle_signals=True)
 

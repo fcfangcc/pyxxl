@@ -18,12 +18,28 @@ aiohttp = "^3.8.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
-yapf = "^0.32.0"
 pytest-asyncio = "^0.18.3"
 pytest-cover = "^3.0.0"
 pre-commit = "^2.18.1"
 pylint = "^2.13.7"
+black = "^22.3.0"
+flake8 = "^4.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 119
+target-version = ['py38']
+
+[tool.isort]
+profile="black"
+py_version = 38
+force_single_line=false
+combine_as_imports=true
+lines_between_types=1
+lines_after_imports=2
+src_paths=["pyxxl","example"]
+line_length = 119

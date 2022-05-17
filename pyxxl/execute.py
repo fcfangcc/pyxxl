@@ -1,15 +1,18 @@
-from typing import Dict, List, Optional
 import asyncio
+import functools
 import logging
 import time
-import functools
-from concurrent.futures import ThreadPoolExecutor
+
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from typing import Dict, List, Optional
+
 from pyxxl import error
-from pyxxl.xxl_client import XXL
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
-from pyxxl.schema import RunData, HandlerInfo
+from pyxxl.schema import HandlerInfo, RunData
+from pyxxl.xxl_client import XXL
+
 
 logger = logging.getLogger("pyxxl")
 
@@ -32,6 +35,7 @@ class JobHandler:
                 @functools.wraps(func)
                 async def inner_wrapper(*args, **kwargs):
                     return await func(*args, **kwargs)
+
             else:
 
                 @functools.wraps(func)
@@ -53,7 +57,6 @@ class JobHandler:
 
 
 class Executor:
-
     def __init__(
         self,
         xxl_client: XXL,
@@ -102,15 +105,17 @@ class Executor:
 
                     if len(self.queue[run_data.jobId]) > self.max_queue_length:
                         msg = "job %s is  SERIAL, queue length more than %s. logId %s  discard !" % (
-                            run_data.jobId, self.max_queue_length, run_data.logId
+                            run_data.jobId,
+                            self.max_queue_length,
+                            run_data.logId,
                         )
                         logger.error(msg)
                         raise error.JobDuplicateError(msg)
                     else:
                         queue = self.queue[run_data.jobId]
                         logger.info(
-                            "job %s is in queen, logId %s wait for %s..." %
-                            (run_data.jobId, run_data.logId, len(queue) + 1)
+                            "job %s is in queen, logId %s wait for %s..."
+                            % (run_data.jobId, run_data.logId, len(queue) + 1)
                         )
                         queue.append(run_data)
                         return
@@ -134,9 +139,13 @@ class Executor:
         try:
             g.set_xxl_run_data(data)
             logger.info("start job %s %s" % (data.jobId, data))
-            func = handler.handler() if handler.is_async else self.loop.run_in_executor(
-                self.thread_pool,
-                handler.handler,
+            func = (
+                handler.handler()
+                if handler.is_async
+                else self.loop.run_in_executor(
+                    self.thread_pool,
+                    handler.handler,
+                )
             )
             result = await asyncio.wait_for(func, self.task_timeout)
             logger.info("end job %s %s" % (data.jobId, data))
@@ -169,7 +178,6 @@ class Executor:
                 logger.warning("Job %s cancelled." % job_id)
 
     async def graceful_close(self, timeout=60):
-
         async def _graceful_close():
             while len(self.tasks) > 0:
                 await asyncio.wait(self.tasks.values())

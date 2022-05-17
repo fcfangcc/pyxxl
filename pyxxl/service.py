@@ -1,7 +1,10 @@
 import logging
+
 from aiohttp import web
+
 from pyxxl import error
 from pyxxl.schema import RunData
+
 
 logger = logging.getLogger("pyxxl")
 
@@ -9,13 +12,13 @@ routes = web.RouteTableDef()
 
 
 # pylint: disable=unused-argument
-@routes.post('/beat')
+@routes.post("/beat")
 async def beat(request):
     logger.debug("beat")
     return web.json_response(dict(code=200, msg=None))
 
 
-@routes.post('/idleBeat')
+@routes.post("/idleBeat")
 async def idle_beat(request: web.Request):
     data = await request.json()
     job_id = data["jobId"]
@@ -24,7 +27,7 @@ async def idle_beat(request: web.Request):
     return web.json_response(dict(code=200, msg=None))
 
 
-@routes.post('/run')
+@routes.post("/run")
 async def run(request: web.Request):
     """
         {
@@ -53,14 +56,14 @@ async def run(request: web.Request):
     return web.json_response(dict(code=200, msg=None))
 
 
-@routes.post('/kill')
+@routes.post("/kill")
 async def kill(request: web.Request):
     data = await request.json()
     await request.app["executor"].cancel_job(data["jobId"])
     return web.json_response(dict(code=200, msg=None))
 
 
-@routes.post('/log')
+@routes.post("/log")
 async def log(request: web.Request):
     """
         {
@@ -72,9 +75,9 @@ async def log(request: web.Request):
     data = await request.json()
     logger.info("log %s" % data)
     response = {
-        "code": 200, "msg": None, "content": {
-            "fromLineNum": 1, "toLineNum": 1, "logContent": "xxx", "isEnd": True
-        }
+        "code": 200,
+        "msg": None,
+        "content": {"fromLineNum": 1, "toLineNum": 1, "logContent": "xxx", "isEnd": True},
     }
 
     return web.json_response(response)

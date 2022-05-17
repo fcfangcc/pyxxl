@@ -3,6 +3,7 @@ xxl-jobs 的python客户端实现
 
 .. image:: https://img.shields.io/pypi/v/pyxxl?color=%2334D058&label=pypi%20package
     :target: https://pypi.org/project/pyxxl
+
 .. image:: https://img.shields.io/pypi/pyversions/pyxxl.svg?color=%2334D058
     :target: https://pypi.org/project/pyxxl
 
