@@ -27,7 +27,8 @@ async def _send_demoJobHandler(cli: TestClient, **kwargs):
         "glueUpdatetime": 1586629003727,
         "broadcastIndex": 0,
         "broadcastTotal": 0,
-    } | kwargs
+    }
+    job_data.update(kwargs)
     resp = await cli.post("/run", json=job_data)
     return resp, job_data["jobId"]
 
