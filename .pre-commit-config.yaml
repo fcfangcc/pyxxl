@@ -46,12 +46,11 @@ repos:
     hooks:
       - id: flake8
 
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v0.942
-  #   hooks:
-  #     - id: mypy
-  #       pass_filenames: false
-  #       additional_dependencies:
-  #         - types-requests
-  #         - pydantic
-  #         - sqlalchemy-stubs
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.942
+    hooks:
+      - id: mypy
+        pass_filenames: false
+        additional_dependencies:
+          - types-requests
+          - toml

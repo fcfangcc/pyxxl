@@ -11,24 +11,24 @@ logger = logging.getLogger("pyxxl")
 routes = web.RouteTableDef()
 
 
-# pylint: disable=unused-argument
 @routes.post("/beat")
-async def beat(request):
+async def beat(request: web.Request) -> web.Response:
     logger.debug("beat")
     return web.json_response(dict(code=200, msg=None))
 
 
 @routes.post("/idleBeat")
-async def idle_beat(request: web.Request):
+async def idle_beat(request: web.Request) -> web.Response:
     data = await request.json()
     job_id = data["jobId"]
+    logger.debug("idleBeat: %s" % data)
     if await request.app["executor"].is_running(data["jobId"]):
         return web.json_response(dict(code=500, msg="job %s is running." % job_id))
     return web.json_response(dict(code=200, msg=None))
 
 
 @routes.post("/run")
-async def run(request: web.Request):
+async def run(request: web.Request) -> web.Response:
     """
         {
         "jobId":1,                                  // 任务ID
@@ -57,14 +57,15 @@ async def run(request: web.Request):
 
 
 @routes.post("/kill")
-async def kill(request: web.Request):
+async def kill(request: web.Request) -> web.Response:
     data = await request.json()
     await request.app["executor"].cancel_job(data["jobId"])
     return web.json_response(dict(code=200, msg=None))
 
 
+# todo
 @routes.post("/log")
-async def log(request: web.Request):
+async def log(request: web.Request) -> web.Response:
     """
         {
         "logDateTim":0,     // 本次调度日志时间

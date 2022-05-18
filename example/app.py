@@ -20,7 +20,7 @@ app = PyxxlRunner(
 @app.handler.register(name="demoJobHandler")
 async def test_task():
     await asyncio.sleep(5)
-    return "成功30"
+    return "成功..."
 
 
 @app.handler.register(name="xxxxx")
