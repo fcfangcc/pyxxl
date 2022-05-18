@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from multiprocessing import Process
+from typing import AsyncGenerator, Optional
 
 from aiohttp import web
 
@@ -15,19 +16,19 @@ logger = logging.getLogger("pyxxl.run")
 
 
 class PyxxlRunner:
-    xxl_client: XXL = None
-    executor: Executor = None
-    register_task = None
-    daemon = None
+    xxl_client: Optional[XXL] = None
+    executor: Optional[Executor] = None
+    register_task: Optional[asyncio.Task] = None
+    daemon: Optional[Process] = None
 
     def __init__(
         self,
         xxl_admin_baseurl: str,
         executor_name: str,
-        handler: JobHandler,
-        access_token: str = None,
-        host=None,
-        port=9999,
+        handler: Optional[JobHandler] = None,
+        access_token: Optional[str] = None,
+        host: Optional[str] = None,
+        port: int = 9999,
     ):
         """
 
@@ -47,47 +48,55 @@ class PyxxlRunner:
         self.access_token = access_token
         self.handler = handler or JobHandler()
 
-    async def _register_task(self, xxl_client: XXL):
+    async def _register_task(self, xxl_client: XXL) -> None:
+        # todo: 这是个调度器的bug，必须循环去注册，不然会显示为离线
+        # https://github.com/xuxueli/xxl-job/issues/2090
         while True:
             await xxl_client.registry(self.executor_name, self.executor_baseurl)
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)
 
-    async def _on_startup(self):
-        self.xxl_client = XXL(self.xxl_admin_baseurl, token=self.access_token)
+    def _get_xxl_clint(self) -> XXL:
+        """for moke"""
+        return XXL(self.xxl_admin_baseurl, token=self.access_token)
+
+    async def _init(self) -> None:
+        self.xxl_client = self._get_xxl_clint()
         self.executor = Executor(self.xxl_client, handler=self.handler)
         self.register_task = asyncio.create_task(self._register_task(self.xxl_client), name="pyxxl-register")
 
-    # pylint: disable=unused-argument
-    async def _on_cleanup(self, *args, **kwargs):
-        self.register_task.cancel()
-        logger.info("unregister executor success.")
-        await self.xxl_client.registryRemove(self.executor_name, self.executor_baseurl)
-        await self.executor.shutdown()
-        await self.xxl_client.close()
-        logger.info("cleanup executor success.")
-
-    async def web_on_startup(self, app: web.Application):
-        await self._on_startup()
+    async def _cleanup_ctx(self, app: web.Application) -> AsyncGenerator:
+        await self._init()
         app["xxl_client"] = self.xxl_client
         app["executor"] = self.executor
         app["register_task"] = self.register_task
-        logger.info("init executor web server.")
-        logger.info("register with handlers %s", list(self.executor.handler.handlers()))
+        if self.executor and self.executor.handler:
+            logger.info("register with handlers %s", list(self.executor.handler.handlers()))
+        else:
+            logger.warning("register with handlers is empty")
 
-    def on_cleanup(self, loop=None):
-        loop = loop or asyncio.get_event_loop()
-        logger.info("start close pyxxl with loop %s", loop)
-        task = asyncio.run_coroutine_threadsafe(self._on_cleanup(), loop)
-        task.result()
+        yield
 
-    def run_executor(self, handle_signals=True):
+        app["register_task"].cancel()
+        await app["xxl_client"].registryRemove(self.executor_name, self.executor_baseurl)
+        await app["executor"].shutdown()
+        await app["xxl_client"].close()
+        logger.info("cleanup executor success.")
+
+    def create_server_app(self) -> web.Application:
         app = create_app()
-        app.on_startup.append(self.web_on_startup)
-        app.on_cleanup.append(self._on_cleanup)
-        web.run_app(app, port=self.port, host=self.host, handle_signals=handle_signals)
+        app.cleanup_ctx.append(self._cleanup_ctx)
+        return app
 
-    def run_with_daemon(self):
-        def _runner():
+    def run_executor(self, handle_signals: bool = True) -> None:
+        web.run_app(
+            self.create_server_app(),
+            port=self.port,
+            host=self.host,
+            handle_signals=handle_signals,
+        )
+
+    def run_with_daemon(self) -> None:
+        def _runner() -> None:
             self.run_executor(handle_signals=True)
 
         daemon = Process(target=_runner, name="pyxxl", daemon=True)

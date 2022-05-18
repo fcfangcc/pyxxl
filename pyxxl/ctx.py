@@ -1,24 +1,23 @@
 from contextvars import ContextVar
+from typing import Any
 
 from pyxxl.schema import RunData
 
 
-_global_vars = ContextVar("pyxxl_vars", default=None)
+_global_vars: ContextVar[dict] = ContextVar("pyxxl_vars", default={})
 
 
 class GlobalVars:
     @staticmethod
-    def _set_var(name, obj):
-        if _global_vars.get() is None:
-            _global_vars.set({})
+    def _set_var(name: str, obj: Any) -> None:
         _global_vars.get()[name] = obj
 
     @staticmethod
-    def _get_var(name):
+    def _get_var(name: str) -> Any:
         return _global_vars.get()[name]
 
     @staticmethod
-    def set_xxl_run_data(data: RunData):
+    def set_xxl_run_data(data: RunData) -> None:
         GlobalVars._set_var("xxl_kwargs", data)
 
     @property

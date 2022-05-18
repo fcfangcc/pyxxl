@@ -1,8 +1,4 @@
-#!/bin/sh
-
-if [ "$1" = "cov" ];then
-
-    poetry run pytest --cov=pyxxl --cov-report=html --cov-config=.coveragerc pyxxl/tests
-else
-    poetry run pytest --capture=no pyxxl/tests
-fi
+#!/usr/bin/env bash
+set -e
+set -x
+poetry run pytest --capture=no --cov=pyxxl --cov-report=term-missing pyxxl/tests "${@}"

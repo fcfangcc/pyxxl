@@ -19,16 +19,24 @@ aiohttp = "^3.8.1"
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
 pytest-asyncio = "^0.18.3"
-pytest-cover = "^3.0.0"
 pre-commit = "^2.18.1"
-pylint = "^2.13.7"
 black = "^22.3.0"
 flake8 = "^4.0.1"
+isort = "^5.10.1"
+mypy = "0.942"
+pytest-aiohttp = "^1.0.4"
+pytest-cov = "^3.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+# if your need
+# https://python-poetry.org/docs/repositories/#install-dependencies-from-a-private-repository
+[[tool.poetry.source]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+secondary = true
 
 [tool.black]
 line-length = 119
@@ -43,3 +51,24 @@ lines_between_types=1
 lines_after_imports=2
 src_paths=["pyxxl","example"]
 line_length = 119
+
+[tool.mypy]
+files = "pyxxl"
+ignore_missing_imports = true
+disallow_untyped_defs = true
+exclude = [
+    '^pyxxl/tests/test_.*\.py$',
+    '^pyxxl/tests/api/test_.*\.py$',
+]
+
+
+[tool.coverage.run]
+concurrency = ["thread"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "raise NotImplementedError",
+    "\\.\\.\\."
+]

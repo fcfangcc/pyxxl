@@ -26,7 +26,7 @@ xxl-jobs 的python客户端实现
     from pyxxl import PyxxlRunner, JobHandler
 
     logger = logging.getLogger("pyxxl")
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     xxl_handler = JobHandler()
 
     @xxl_handler.register
@@ -81,3 +81,4 @@ TODOs
 ======================
 
 - [x] 自定义查看日志函数
+- [x] docs
