@@ -1,11 +1,11 @@
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from pyxxl.main import PyxxlRunner
 from pyxxl.xxl_client import XXL, JsonType, Response
 
 
 class MokeXXL(XXL):
-    callback_result: dict[int, Any] = {}
+    callback_result: Dict[int, Any] = {}
 
     async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: str = None) -> None:
         self.callback_result[log_id] = code
