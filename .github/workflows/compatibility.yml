@@ -1,16 +1,16 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python compatibility
+name: Python Test
 
 on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types: [opened, synchronize]
 
 jobs:
-  build:
+  pytest:
 
     runs-on: ubuntu-latest
     strategy:
@@ -33,4 +33,12 @@ jobs:
 
     - name: Test with pytest
       run: |
-        bash ./scripts/test.sh
+        bash ./scripts/test.sh --cov-report=xml
+
+    - name: Upload coverage to Codecov
+      if: ${{ matrix.python-version == '3.10' }}
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true
