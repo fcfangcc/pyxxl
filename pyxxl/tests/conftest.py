@@ -22,7 +22,7 @@ def event_loop() -> Generator:
 
 @pytest.fixture(scope="session")
 async def executor() -> Executor:
-    return Executor(MokeXXL(""))
+    return Executor(MokeXXL("http://localhost:8080/xxl-job-admin/api/"))
 
 
 @pytest.fixture(scope="session")
