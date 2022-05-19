@@ -7,8 +7,11 @@ xxl-jobs 的python客户端实现
 .. image:: https://img.shields.io/pypi/pyversions/pyxxl.svg?color=%2334D058
     :target: https://pypi.org/project/pyxxl
 
+.. image:: https://img.shields.io/codecov/c/github/fcfangcc/pyxxl?color=%2334D058
+    :target: https://codecov.io/gh/fcfangcc/pyxxl
 
-使用pyxxl可以方便的把Python写的方法注册到xxl-job中，使用xxl-job-admin管理Python定时任务和周期任务
+
+使用pyxxl可以方便的把Python写的方法注册到xxl-job中,使用xxl-job-admin管理Python定时任务和周期任务
 
 如何使用
 =======================
