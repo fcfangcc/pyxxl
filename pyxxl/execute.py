@@ -33,14 +33,6 @@ class JobHandler:
             self._handlers[handler_name] = HandlerInfo(handler=func)
             logger.info("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
 
-            # if asyncio.iscoroutinefunction(func):
-
-            #     @functools.wraps(func)
-            #     async def inner_wrapper(*args: Any, **kwargs: Any) -> Any:
-            #         return await func(*args, **kwargs)
-
-            # else:
-
             @functools.wraps(func)
             def inner_wrapper(*args: Any, **kwargs: Any) -> Any:
                 return func(*args, **kwargs)

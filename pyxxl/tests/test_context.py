@@ -13,14 +13,20 @@ async def test_runner_callback(executor: Executor):
         logId = g.xxl_run_data.logId
         assert logId == 1
 
-    data = RunData(
-        **dict(
-            logId=1,
-            jobId=11,
-            executorHandler="text_ctx",
-            executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
+    @executor.handler.register
+    def text_ctx_sync():
+        logId = g.xxl_run_data.logId
+        assert logId == 1
+
+    for handler in ["text_ctx", "text_ctx_sync"]:
+        data = RunData(
+            **dict(
+                logId=1,
+                jobId=11,
+                executorHandler=handler,
+                executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
+            )
         )
-    )
-    await executor.run_job(data)
-    await executor.graceful_close()
-    assert executor.xxl_client.callback_result.get(1) == 200
+        await executor.run_job(data)
+        await executor.graceful_close()
+        assert executor.xxl_client.callback_result.get(1) == 200
