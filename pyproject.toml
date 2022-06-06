@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pyxxl"
 version = "0.1.5"
-readme = "README.rst"
+readme = "README.md"
 license = "GPL-3.0-only"
 description = "A Python executor for XXL-jobs"
 authors = ["fcfangcc <swjfc22@live.com>"]
