@@ -131,3 +131,5 @@ dmypy.json
 
 tables_xxl_job.sql
 .vscode/
+# docs
+docs/site
