@@ -1,0 +1,26 @@
+site_name: PYXXL
+repo_url: https://github.com/fcfangcc/pyxxl
+
+
+nav:
+    - Index: 'index.md'
+    - Example: 'example.md'
+    - Api: 'api.md'
+
+theme:
+  name: material
+
+plugins:
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_source: false
+
+markdown_extensions:
+- mdx_include:
+    base_path: docs
+- pymdownx.highlight:
+    anchor_linenums: true
+- pymdownx.superfences

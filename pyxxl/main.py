@@ -31,6 +31,17 @@ class PyxxlRunner:
         port: int = 9999,
     ):
         """
+        Example:
+            ```
+            runner = PyxxlRunner(
+                "http://localhost:8080/xxl-job-admin/api/",
+                executor_name="xxl-job-executor-sample",
+                port=9999,
+                host="172.17.0.1",
+                handler=xxl_handler,
+            )
+            ```
+
 
         Args:
             xxl_admin_baseurl (str): xxl-admin服务端暴露的restful接口url(如http://localhost:8080/xxl-job-admin/api/)
