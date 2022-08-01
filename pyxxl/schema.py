@@ -14,6 +14,20 @@ class HandlerInfo:
 
 @dataclass(frozen=True)
 class RunData:
+    """
+    调度器传入的所有参数，执行函数通过g来获取这些参数
+
+    Example:
+        ```python
+        from pyxxl.ctx import g
+
+        @xxxxx
+        async def test():
+            print(g.xxl_run_data.logId)
+        ```
+
+    """
+
     jobId: int
     logId: int
     executorHandler: str

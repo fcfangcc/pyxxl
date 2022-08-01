@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from pyxxl import PyxxlRunner
+from pyxxl.ctx import g
 
 
 logger = logging.getLogger("pyxxl")
@@ -19,6 +20,8 @@ app = PyxxlRunner(
 
 @app.handler.register(name="demoJobHandler")
 async def test_task():
+    # you can get task params with "g"
+    print("get executor params: %s" % g.xxl_run_data.executorParams)
     await asyncio.sleep(5)
     return "成功..."
 

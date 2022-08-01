@@ -1,3 +1,3 @@
-# Class Docs
+# PyxxlRunner
 
 ::: pyxxl.PyxxlRunner
