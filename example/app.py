@@ -7,7 +7,7 @@ from pyxxl.ctx import g
 from pyxxl.utils import setup_logging
 
 
-setup_logging(logging.INFO)
+setup_logging(logging.DEBUG)
 
 app = PyxxlRunner(
     "http://localhost:8080/xxl-job-admin/api/",

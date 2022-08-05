@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
 
+from yarl import URL
+
 from pyxxl.error import ClientError, XXLRegisterError
 
 
@@ -31,27 +33,40 @@ class XXL:
         loop: Optional[asyncio.AbstractEventLoop] = None,
         retry_times: int = 0,
         retry_interval: int = 5,
+        session: Optional[aiohttp.ClientSession] = None,
         **kwargs: Any,
     ) -> None:
         self.loop = loop or asyncio.get_event_loop()
         kwargs["loop"] = self.loop
-        # https://docs.aiohttp.org/en/stable/client_reference.html#baseconnector
-        self.conn = aiohttp.TCPConnector(**kwargs)
-        self.session: aiohttp.ClientSession = aiohttp.ClientSession(connector=self.conn)
-        if not (admin_url.startswith("http") and admin_url.endswith("/")):
+
+        _admin_url: URL = URL(admin_url)
+        if not (_admin_url.scheme.startswith("http") and _admin_url.path.endswith("/")):
             raise ValueError("admin_url must like http://localhost:8080/xxl-job-admin/api/")
-        self.admin_url = admin_url
+
+        # https://docs.aiohttp.org/en/stable/client_reference.html#baseconnector
+        self.url_path = _admin_url.path
+        if not session:  # for pytest
+            self.conn = aiohttp.TCPConnector(**kwargs)
+            session = aiohttp.ClientSession(
+                base_url=_admin_url.origin(),
+                connector=self.conn,
+            )
+
+        self.session = session
+
         self.retry_times = retry_times
         self.retry_interval = retry_interval
         self.headers = {"XXL-JOB-ACCESS-TOKEN": token} if token else {}
 
-    async def registry(self, key: str, value: str) -> None:
+    async def registry(self, key: str, value: str) -> bool:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
         try:
             await self._post("registry", payload, retry_times=1)
             logger.debug("Registry successful. %s" % payload)
+            return True
         except XXLRegisterError as e:
             logger.error("Registry executor failed. %s", e.message)
+        return False
 
     async def registryRemove(self, key: str, value: str) -> None:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
@@ -75,7 +90,7 @@ class XXL:
         retry_times = retry_times or self.retry_times
         while times <= retry_times or retry_times == 0:
             try:
-                async with self.session.post(self.admin_url + path, json=payload, headers=self.headers) as response:
+                async with self.session.post(self.url_path + path, json=payload, headers=self.headers) as response:
                     if response.status == 200:
                         r = Response(**(await response.json()))
                         if not r.ok:

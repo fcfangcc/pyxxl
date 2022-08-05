@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyxxl"
-version = "0.1.6"
+version = "0.1.7"
 readme = "README.md"
 license = "GPL-3.0-only"
 description = "A Python executor for XXL-jobs"

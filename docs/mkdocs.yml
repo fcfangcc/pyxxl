@@ -9,6 +9,7 @@ nav:
       - apis/runner.md
       - apis/executor.md
       - apis/run_data.md
+    - Changelog: 'changelog.md'
 
 theme:
   name: material
