@@ -1,7 +1,7 @@
 import pytest
 
 from pyxxl.error import JobRegisterError
-from pyxxl.execute import Executor
+from pyxxl.executor import Executor
 
 
 # pylint: disable=function-redefined

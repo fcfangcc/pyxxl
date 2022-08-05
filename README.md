@@ -32,7 +32,7 @@
 pip install pyxxl
 ```
 
-```
+```python
 import asyncio
 
 from pyxxl import PyxxlRunner
@@ -49,10 +49,9 @@ async def test_task():
     await asyncio.sleep(5)
     return "成功..."
 
-
+# 如果你代码里面没有实现全异步，请使用同步函数，不然会阻塞其他任务
 @app.handler.register(name="xxxxx")
-async def test_task3():
-    await asyncio.sleep(3)
+def test_task3():
     return "成功3"
 
 

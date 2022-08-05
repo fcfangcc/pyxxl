@@ -1,5 +1,5 @@
 from contextvars import ContextVar
-from typing import Any
+from typing import Any, Optional
 
 from pyxxl.schema import RunData
 
@@ -15,6 +15,10 @@ class GlobalVars:
     @staticmethod
     def _get_var(name: str) -> Any:
         return _global_vars.get()[name]
+
+    @staticmethod
+    def try_get(name: str) -> Optional[Any]:
+        return _global_vars.get().get(name)
 
     @staticmethod
     def set_xxl_run_data(data: RunData) -> None:

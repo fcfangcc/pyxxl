@@ -4,8 +4,8 @@ import time
 import pytest
 
 from pyxxl.enum import executorBlockStrategy
-from pyxxl.error import JobDuplicateError, JobNotFoundError
-from pyxxl.execute import Executor, JobHandler
+from pyxxl.error import JobDuplicateError, JobNotFoundError, JobParamsError
+from pyxxl.executor import Executor, JobHandler
 from pyxxl.schema import RunData
 
 
@@ -30,14 +30,14 @@ def pytest_executor_3():
 
 
 @pytest.mark.asyncio
-async def test_runner_not_found(executor: Executor):
+async def test_runner_not_found(executor: Executor, job_id: int):
     executor.reset_handler(job_handler)
     with pytest.raises(JobNotFoundError):
         await executor.run_job(
             RunData(
                 **dict(
                     logId=211,
-                    jobId=211,
+                    jobId=job_id,
                     executorHandler="not_found",
                     executorBlockStrategy=executorBlockStrategy.DISCARD_LATER.value,
                 )
@@ -49,6 +49,7 @@ async def test_runner_not_found(executor: Executor):
 @pytest.mark.asyncio
 async def test_runner_callback(executor: Executor):
     executor.reset_handler(job_handler)
+    executor.xxl_client.clear_result()
     data = RunData(
         **dict(
             logId=1,
@@ -80,7 +81,7 @@ async def test_runner_cancel(executor: Executor):
         RunData(
             **dict(
                 logId=11,
-                jobId=11,
+                jobId=1100,
                 executorHandler="pytest_executor_5",
                 executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
             )
@@ -90,114 +91,88 @@ async def test_runner_cancel(executor: Executor):
         RunData(
             **dict(
                 logId=12,
-                jobId=12,
+                jobId=1200,
                 executorHandler="pytest_executor_5",
                 executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
             )
         )
     )
-    await executor.cancel_job(11)
+    await executor.cancel_job(1100)
     await executor.graceful_close()
     assert executor.xxl_client.callback_result.get(11) is None
     assert executor.xxl_client.callback_result.get(12) == 200
 
 
 @pytest.mark.asyncio
-async def test_runner_SERIAL_EXECUTION(executor: Executor):
+async def test_runner_SERIAL_EXECUTION(executor: Executor, job_id: int):
+    executor.xxl_client.clear_result()
     executor.reset_handler(job_handler)
-    jobId = 11
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=11,
-                jobId=jobId,
-                executorHandler="pytest_executor_3",
-                executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
-            )
-        )
+    run_data = dict(
+        jobId=job_id,
+        executorHandler="pytest_executor_3",
+        executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
     )
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=21,
-                jobId=jobId,
-                executorHandler="pytest_executor_3",
-                executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
-            )
-        )
-    )
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=31,
-                jobId=jobId,
-                executorHandler="pytest_executor_3",
-                executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
-            )
-        )
-    )
-    assert len(executor.queue.get(jobId)) == 2
+    await executor.run_job(RunData(logId=11, **run_data))
+    await executor.run_job(RunData(logId=12, **run_data))
+    await executor.run_job(RunData(logId=13, **run_data))
+    assert len(executor.queue.get(job_id)) == 2
     await executor.graceful_close()
-    assert len(executor.queue.get(jobId)) == 0
-    assert executor.xxl_client.callback_result.get(31) == 200
+    assert len(executor.queue.get(job_id)) == 0
+    assert executor.xxl_client.callback_result.get(13) == 200
+
+    # max_queue_length
+    executor.max_queue_length = 2
+    await executor.run_job(RunData(logId=11, **run_data))
+    await executor.run_job(RunData(logId=12, **run_data))
+    await executor.run_job(RunData(logId=13, **run_data))
+    with pytest.raises(JobDuplicateError, match="discard"):
+        await executor.run_job(RunData(logId=14, **run_data))
 
 
 @pytest.mark.asyncio
-async def test_runner_DISCARD_LATER(executor: Executor):
+async def test_runner_DISCARD_LATER(executor: Executor, job_id: int):
     executor.reset_handler(job_handler)
-    jobId = 31
-    executor.xxl_client.callback_result.clear()
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=11,
-                jobId=jobId,
-                executorHandler="pytest_executor_3",
-                executorBlockStrategy=executorBlockStrategy.DISCARD_LATER.value,
-            )
-        )
+    executor.xxl_client.clear_result()
+    run_data = dict(
+        jobId=job_id,
+        executorHandler="pytest_executor_3",
+        executorBlockStrategy=executorBlockStrategy.DISCARD_LATER.value,
     )
+    await executor.run_job(RunData(logId=11, **run_data))
     with pytest.raises(JobDuplicateError):
-        await executor.run_job(
-            RunData(
-                **dict(
-                    logId=21,
-                    jobId=jobId,
-                    executorHandler="pytest_executor_3",
-                    executorBlockStrategy=executorBlockStrategy.DISCARD_LATER.value,
-                )
-            )
-        )
+        await executor.run_job(RunData(logId=21, **run_data))
     await executor.graceful_close()
     assert executor.xxl_client.callback_result.get(11) == 200
     assert executor.xxl_client.callback_result.get(21) is None
 
 
 @pytest.mark.asyncio
-async def test_runner_COVER_EARLY(executor: Executor):
+async def test_runner_COVER_EARLY(executor: Executor, job_id: int):
     executor.reset_handler(job_handler)
-    jobId = 41
-    executor.xxl_client.callback_result.clear()
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=40,
-                jobId=jobId,
-                executorHandler="pytest_executor_3",
-                executorBlockStrategy=executorBlockStrategy.COVER_EARLY.value,
-            )
-        )
+    executor.xxl_client.clear_result()
+    run_data = dict(
+        jobId=job_id,
+        executorHandler="pytest_executor_3",
+        executorBlockStrategy=executorBlockStrategy.COVER_EARLY.value,
     )
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=41,
-                jobId=jobId,
-                executorHandler="pytest_executor_3",
-                executorBlockStrategy=executorBlockStrategy.COVER_EARLY.value,
-            )
-        )
-    )
+    await executor.run_job(RunData(logId=40, **run_data))
+    await executor.run_job(RunData(logId=41, **run_data))
     await executor.graceful_close()
     assert executor.xxl_client.callback_result.get(41) == 200
     assert executor.xxl_client.callback_result.get(40) is None
+
+
+@pytest.mark.asyncio
+async def test_runner_OTHER(executor: Executor, job_id: int):
+    executor.reset_handler(job_handler)
+    with pytest.raises(JobParamsError, match="unknown executorBlockStrategy"):
+        for i in range(2):
+            await executor.run_job(
+                RunData(
+                    logId=40 + i,
+                    jobId=job_id,
+                    executorHandler="pytest_executor_3",
+                    executorBlockStrategy="OTHER",
+                )
+            )
+    executor.xxl_client.clear_result()

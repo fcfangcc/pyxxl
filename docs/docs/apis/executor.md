@@ -1,0 +1,3 @@
+# Executor
+
+::: pyxxl.executor.Executor

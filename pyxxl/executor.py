@@ -15,7 +15,7 @@ from pyxxl.types import DecoratedCallable
 from pyxxl.xxl_client import XXL
 
 
-logger = logging.getLogger("pyxxl")
+logger = logging.getLogger(__name__)
 
 
 class JobHandler:
@@ -31,7 +31,7 @@ class JobHandler:
             if handler_name in self._handlers and replace is False:
                 raise error.JobRegisterError("handler %s already registered." % handler_name)
             self._handlers[handler_name] = HandlerInfo(handler=func)
-            logger.info("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
+            logger.debug("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
 
             @functools.wraps(func)
             def inner_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -47,8 +47,8 @@ class JobHandler:
     def get(self, name: str) -> Optional[HandlerInfo]:
         return self._handlers.get(name, None)
 
-    def handlers(self) -> List[str]:
-        return list(self._handlers.keys())
+    def handlers_info(self) -> List[str]:
+        return ["<%s is_async:%s>" % (k, v.is_async) for k, v in self._handlers.items()]
 
 
 class Executor:
@@ -62,6 +62,16 @@ class Executor:
         task_timeout: int = 60 * 60,
         max_queue_length: int = 30,
     ) -> None:
+        """执行器，真正的调度任务和策略都在这里
+
+        Args:
+            xxl_client (XXL): xxl客户端
+            handler (Optional[JobHandler], optional): Defaults to None.
+            loop (Optional[asyncio.AbstractEventLoop], optional): Defaults to None.
+            max_workers (int, optional): 执行同步任务的线程池. Defaults to 20.
+            task_timeout (int, optional): 全局的任务超时配置,如果executorTimeout参数存在,以executorTimeout为准. Defaults to 60*60.
+            max_queue_length (int, optional): 单机串行的队列长度，当阻塞的任务大于此值时会抛弃. Defaults to 30.
+        """
         self.xxl_client = xxl_client
         self.loop = loop or asyncio.get_event_loop()
         self.tasks: Dict[int, asyncio.Task] = {}
@@ -98,25 +108,33 @@ class Executor:
                     await self._cancel(run_data.jobId)
                 elif run_data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
 
-                    if len(self.queue[run_data.jobId]) > self.max_queue_length:
-                        msg = "job %s is  SERIAL, queue length more than %s. logId %s  discard !" % (
-                            run_data.jobId,
-                            self.max_queue_length,
-                            run_data.logId,
+                    if len(self.queue[run_data.jobId]) >= self.max_queue_length:
+                        msg = (
+                            "job {job_id} is  SERIAL, queue length more than {max_length}."
+                            "logId {log_id}  discard!".format(
+                                job_id=run_data.jobId,
+                                log_id=run_data.logId,
+                                max_length=self.max_queue_length,
+                            )
                         )
                         logger.error(msg)
                         raise error.JobDuplicateError(msg)
                     else:
                         queue = self.queue[run_data.jobId]
                         logger.info(
-                            "job %s is in queen, logId %s wait for %s..."
-                            % (run_data.jobId, run_data.logId, len(queue) + 1)
+                            "job {job_id} is in queen, logId {log_id} ranked {ranked}th [max={max_length}]...".format(
+                                job_id=run_data.jobId,
+                                log_id=run_data.logId,
+                                ranked=len(queue) + 1,
+                                max_length=self.max_queue_length,
+                            )
                         )
                         queue.append(run_data)
                         return
                 else:
-                    raise error.JobDuplicateError(
-                        "unknown executorBlockStrategy [%s]." % run_data.executorBlockStrategy
+                    raise error.JobParamsError(
+                        "unknown executorBlockStrategy [%s]." % run_data.executorBlockStrategy,
+                        executorBlockStrategy=run_data.executorBlockStrategy,
                     )
 
             start_time = int(time.time()) * 1000
@@ -133,7 +151,7 @@ class Executor:
     async def _run(self, handler: HandlerInfo, start_time: int, data: RunData) -> None:
         try:
             g.set_xxl_run_data(data)
-            logger.info("start job %s %s" % (data.jobId, data))
+            logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
             func = (
                 handler.handler()
                 if handler.is_async
@@ -142,8 +160,8 @@ class Executor:
                     handler.handler,
                 )
             )
-            result = await asyncio.wait_for(func, self.task_timeout)
-            logger.info("end job %s %s" % (data.jobId, data))
+            result = await asyncio.wait_for(func, data.executorTimeout or self.task_timeout)
+            logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
         except asyncio.CancelledError as e:
             logger.warning(e, exc_info=True)
@@ -160,7 +178,7 @@ class Executor:
         queue = self.queue[job_id]
         if queue:
             kwargs: RunData = queue.pop(0)
-            logger.info("job %s in queue[%s], start job with logId %s" % (kwargs.jobId, len(queue), kwargs.logId))
+            logger.info("JobId %s in queue[%s], start job with logId %s" % (kwargs.jobId, len(queue), kwargs.logId))
             await self.run_job(kwargs)
 
     async def _cancel(self, job_id: int) -> None:

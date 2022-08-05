@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from typing import Generator
 
@@ -8,8 +9,20 @@ import pytest_asyncio
 from aiohttp.web import Application
 from pytest_aiohttp.plugin import AiohttpClient, TestClient
 
-from pyxxl.execute import Executor
+from pyxxl.executor import Executor
 from pyxxl.tests.utils import MokePyxxlRunner, MokeXXL
+from pyxxl.utils import setup_logging
+
+
+setup_logging(logging.INFO)
+
+GLOBAL_JOB_ID = 1
+
+
+def _create_job_id() -> int:
+    global GLOBAL_JOB_ID
+    GLOBAL_JOB_ID += 1
+    return GLOBAL_JOB_ID
 
 
 @pytest.fixture(scope="session")
@@ -44,3 +57,8 @@ def web_app() -> Application:
 @pytest_asyncio.fixture
 async def cli(aiohttp_client: AiohttpClient, web_app: Application) -> TestClient:
     return await aiohttp_client(web_app)
+
+
+@pytest.fixture(scope="function")
+async def job_id() -> int:
+    return _create_job_id()
