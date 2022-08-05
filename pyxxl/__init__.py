@@ -1,6 +1,6 @@
 import importlib.metadata
 
-from .execute import JobHandler
+from .executor import JobHandler
 from .main import PyxxlRunner
 
 

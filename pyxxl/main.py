@@ -2,17 +2,17 @@ import asyncio
 import logging
 
 from multiprocessing import Process
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 
 from aiohttp import web
 
-from pyxxl.execute import Executor, JobHandler
-from pyxxl.service import create_app
+from pyxxl.executor import Executor, JobHandler
+from pyxxl.server import create_app
 from pyxxl.utils import ensure_host
 from pyxxl.xxl_client import XXL
 
 
-logger = logging.getLogger("pyxxl.run")
+logger = logging.getLogger(__name__)
 
 
 class PyxxlRunner:
@@ -29,6 +29,9 @@ class PyxxlRunner:
         access_token: Optional[str] = None,
         host: Optional[str] = None,
         port: int = 9999,
+        graceful: bool = False,
+        graceful_timeout: int = 60,
+        executor_kwargs: Optional[Dict[str, Any]] = None,
     ):
         """
         Example:
@@ -50,6 +53,9 @@ class PyxxlRunner:
             access_token (str, optional): xxl-admin的认证token,如果没有开启不需要传. Defaults to None.
             host (str, optional): 执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址. Defaults to None.
             port (int, optional): 执行器绑定的http服务的端口,作用同host. Defaults to 9999.
+            graceful (bool): 执行器接收关闭信号时，是否优雅关闭当前执行中的任务;如果false会直接cancal所有的任务
+            graceful_timeout (int): 优雅关闭的等待时间
+            executor_kwargs (dict): 执行器的参数(支持max_workers,task_timeout,max_queue_length) [Executor](/apis/executor)
         """
         self.host = ensure_host(host)
         self.port = port
@@ -58,6 +64,9 @@ class PyxxlRunner:
         self.executor_baseurl = "http://{host}:{port}".format(host=self.host, port=self.port)
         self.access_token = access_token
         self.handler = handler or JobHandler()
+        self.graceful = graceful
+        self.graceful_timeout = graceful_timeout
+        self.executor_kwargs = executor_kwargs or {}
 
     async def _register_task(self, xxl_client: XXL) -> None:
         # todo: 这是个调度器的bug，必须循环去注册，不然会显示为离线
@@ -72,7 +81,7 @@ class PyxxlRunner:
 
     async def _init(self) -> None:
         self.xxl_client = self._get_xxl_clint()
-        self.executor = Executor(self.xxl_client, handler=self.handler)
+        self.executor = Executor(self.xxl_client, handler=self.handler, **self.executor_kwargs)
         self.register_task = asyncio.create_task(self._register_task(self.xxl_client), name="pyxxl-register")
 
     async def _cleanup_ctx(self, app: web.Application) -> AsyncGenerator:
@@ -81,7 +90,7 @@ class PyxxlRunner:
         app["executor"] = self.executor
         app["register_task"] = self.register_task
         if self.executor and self.executor.handler:
-            logger.info("register with handlers %s", list(self.executor.handler.handlers()))
+            logger.info("register with handlers %s", list(self.executor.handler.handlers_info()))
         else:
             logger.warning("register with handlers is empty")
 
@@ -89,7 +98,10 @@ class PyxxlRunner:
 
         app["register_task"].cancel()
         await app["xxl_client"].registryRemove(self.executor_name, self.executor_baseurl)
-        await app["executor"].shutdown()
+        if self.graceful:
+            await app["executor"].graceful_close(self.graceful_timeout)
+        else:
+            await app["executor"].shutdown()
         await app["xxl_client"].close()
         logger.info("cleanup executor success.")
 

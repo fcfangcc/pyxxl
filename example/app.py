@@ -1,14 +1,13 @@
 import asyncio
 import logging
+import time
 
 from pyxxl import PyxxlRunner
 from pyxxl.ctx import g
+from pyxxl.utils import setup_logging
 
 
-logger = logging.getLogger("pyxxl")
-handler = logging.StreamHandler()
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
+setup_logging(logging.INFO)
 
 app = PyxxlRunner(
     "http://localhost:8080/xxl-job-admin/api/",
@@ -29,6 +28,12 @@ async def test_task():
 @app.handler.register(name="xxxxx")
 async def test_task3():
     await asyncio.sleep(3)
+    return "成功3"
+
+
+@app.handler.register(name="sync_func")
+def test_task4():
+    time.sleep(3)
     return "成功3"
 
 

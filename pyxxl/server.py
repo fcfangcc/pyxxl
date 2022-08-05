@@ -6,7 +6,7 @@ from pyxxl import error
 from pyxxl.schema import RunData
 
 
-logger = logging.getLogger("pyxxl")
+logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
@@ -46,8 +46,10 @@ async def run(request: web.Request) -> web.Response:
     }
     """
     data = await request.json()
+    run_data = RunData(**data)
+    logger.debug("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
     try:
-        await request.app["executor"].run_job(RunData(**data))
+        await request.app["executor"].run_job(run_data)
     except error.JobDuplicateError as e:
         return web.json_response(dict(code=500, msg=e.message))
     except error.JobNotFoundError as e:

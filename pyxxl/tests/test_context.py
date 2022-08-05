@@ -2,7 +2,7 @@ import pytest
 
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
-from pyxxl.execute import Executor
+from pyxxl.executor import Executor
 from pyxxl.schema import RunData
 
 

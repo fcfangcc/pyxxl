@@ -13,6 +13,9 @@ class MokeXXL(XXL):
     async def _post(self, path: str, payload: JsonType, retry_times: Optional[int] = None) -> Response:
         return Response(code=200)
 
+    def clear_result(self) -> None:
+        self.callback_result = {}
+
 
 class MokePyxxlRunner(PyxxlRunner):
     def _get_xxl_clint(self) -> MokeXXL:

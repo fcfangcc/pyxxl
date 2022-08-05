@@ -8,7 +8,7 @@ import aiohttp
 from pyxxl.error import ClientError, XXLRegisterError
 
 
-logger = logging.getLogger("pyxxl")
+logger = logging.getLogger(__name__)
 
 JsonType = Union[None, int, str, bool, List[Any], Dict[Any, Any]]
 
@@ -49,14 +49,14 @@ class XXL:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
         try:
             await self._post("registry", payload, retry_times=1)
-            logger.debug("registry successful. %s" % payload)
+            logger.debug("Registry successful. %s" % payload)
         except XXLRegisterError as e:
-            logger.error("registry executor failed. %s", e.message)
+            logger.error("Registry executor failed. %s", e.message)
 
     async def registryRemove(self, key: str, value: str) -> None:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
         await self._post("registryRemove", payload)
-        logger.info("registryRemove successful. %s" % payload)
+        logger.info("RegistryRemove successful. %s" % payload)
 
     async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: str = None) -> None:
         payload = [
@@ -68,7 +68,7 @@ class XXL:
             }
         ]
         await self._post("callback", payload)
-        logger.debug("callback successful. %s" % payload)
+        logger.debug("Callback successful. %s" % payload)
 
     async def _post(self, path: str, payload: JsonType, retry_times: Optional[int] = None) -> Response:
         times = 1
