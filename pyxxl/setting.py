@@ -13,7 +13,7 @@ from pyxxl.utils import get_network_ip
 logger = logging.getLogger(__name__)
 
 
-@dataclass(kw_only=True)
+@dataclass
 class ExecutorConfig:
     """
     如果安装了python-dotenv,支持从.env文件加载配置项
