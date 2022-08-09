@@ -2,19 +2,20 @@ import asyncio
 import logging
 import time
 
-from pyxxl import PyxxlRunner
+from pyxxl import ExecutorConfig, PyxxlRunner
 from pyxxl.ctx import g
 from pyxxl.utils import setup_logging
 
 
 setup_logging(logging.DEBUG)
 
-app = PyxxlRunner(
-    "http://localhost:8080/xxl-job-admin/api/",
-    executor_name="xxl-job-executor-sample",
-    port=9999,
-    host="172.17.0.1",
+config = ExecutorConfig(
+    xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
+    executor_app_name="xxl-job-executor-sample",
+    executor_host="172.17.0.1",
 )
+
+app = PyxxlRunner(config)
 
 
 @app.handler.register(name="demoJobHandler")

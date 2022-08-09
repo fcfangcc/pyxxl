@@ -19,4 +19,4 @@ class MokeXXL(XXL):
 
 class MokePyxxlRunner(PyxxlRunner):
     def _get_xxl_clint(self) -> MokeXXL:
-        return MokeXXL(self.xxl_admin_baseurl, token=self.access_token)
+        return MokeXXL(self.config.xxl_admin_baseurl, token=self.config.access_token)

@@ -1,0 +1,3 @@
+# ExecutorConfig
+
+::: pyxxl.ExecutorConfig

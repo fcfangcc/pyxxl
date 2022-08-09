@@ -2,7 +2,7 @@ import atexit
 
 from multiprocessing.util import _exit_function
 
-from pyxxl import PyxxlRunner
+from pyxxl import ExecutorConfig, PyxxlRunner
 
 
 bind = ["0.0.0.0:8000"]
@@ -18,11 +18,13 @@ def when_ready(server):
     from app import xxl_handler
 
     atexit.unregister(_exit_function)
-    runner = PyxxlRunner(
-        "http://localhost:8080/xxl-job-admin/api/",
-        executor_name="xxl-job-executor-sample",
-        host="172.17.0.1",
-        handler=xxl_handler,
+
+    config = ExecutorConfig(
+        xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
+        executor_app_name="xxl-job-executor-sample",
+        executor_host="172.17.0.1",
     )
+
+    runner = PyxxlRunner(config, handler=xxl_handler)
     server.pyxxl_runner = runner
     runner.run_with_daemon()

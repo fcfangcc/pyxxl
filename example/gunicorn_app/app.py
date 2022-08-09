@@ -4,12 +4,11 @@ import logging
 from fastapi import FastAPI
 
 from pyxxl import JobHandler
+from pyxxl.utils import setup_logging
 
 
-logger = logging.getLogger("pyxxl")
-handler = logging.StreamHandler()
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
+setup_logging(logging.DEBUG)
+
 
 app = FastAPI()
 xxl_handler = JobHandler()
