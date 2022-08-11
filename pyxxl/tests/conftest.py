@@ -9,6 +9,7 @@ import pytest_asyncio
 from aiohttp.web import Application
 from pytest_aiohttp.plugin import AiohttpClient, TestClient
 
+from pyxxl import ExecutorConfig
 from pyxxl.executor import Executor
 from pyxxl.tests.utils import MokePyxxlRunner, MokeXXL
 from pyxxl.utils import setup_logging
@@ -34,18 +35,24 @@ def event_loop() -> Generator:
 
 
 @pytest.fixture(scope="session")
-async def executor() -> Executor:
-    return Executor(MokeXXL("http://localhost:8080/xxl-job-admin/api/"))
+def executor_config() -> ExecutorConfig:
+    return ExecutorConfig(
+        xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
+        executor_app_name="xxl-job-executor-sample",
+        executor_host="127.0.0.1",
+        graceful_close=False,
+    )
 
 
 @pytest.fixture(scope="session")
-def web_app() -> Application:
-    runner = MokePyxxlRunner(
-        "http://localhost:8080/xxl-job-admin/api/",
-        executor_name="xxl-job-executor-sample",
-        port=9999,
-        host="127.0.0.1",
-    )
+def executor(executor_config: ExecutorConfig) -> Executor:
+    return Executor(MokeXXL("http://localhost:8080/xxl-job-admin/api/"), executor_config)
+
+
+@pytest.fixture(scope="session")
+def web_app(executor_config: ExecutorConfig) -> Application:
+
+    runner = MokePyxxlRunner(executor_config)
 
     @runner.handler.register(name="demoJobHandler")
     async def test_task() -> None:
@@ -60,5 +67,5 @@ async def cli(aiohttp_client: AiohttpClient, web_app: Application) -> TestClient
 
 
 @pytest.fixture(scope="function")
-async def job_id() -> int:
+def job_id() -> int:
     return _create_job_id()

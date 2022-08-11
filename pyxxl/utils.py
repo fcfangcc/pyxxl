@@ -12,10 +12,6 @@ def get_network_ip() -> str:
     return ipaddrlist[0]
 
 
-def ensure_host(host: Optional[str] = None) -> str:
-    return host or get_network_ip()
-
-
 def _init_log_record_factory() -> None:
     old_factory = logging.getLogRecordFactory()
 

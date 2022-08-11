@@ -121,12 +121,14 @@ async def test_runner_SERIAL_EXECUTION(executor: Executor, job_id: int):
     assert executor.xxl_client.callback_result.get(13) == 200
 
     # max_queue_length
-    executor.max_queue_length = 2
+    executor.config.task_queue_length = 2
     await executor.run_job(RunData(logId=11, **run_data))
     await executor.run_job(RunData(logId=12, **run_data))
     await executor.run_job(RunData(logId=13, **run_data))
     with pytest.raises(JobDuplicateError, match="discard"):
         await executor.run_job(RunData(logId=14, **run_data))
+    #
+    executor.config.task_queue_length = 30
 
 
 @pytest.mark.asyncio

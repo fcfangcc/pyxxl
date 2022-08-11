@@ -11,6 +11,7 @@ from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
 from pyxxl.schema import HandlerInfo, RunData
+from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
 from pyxxl.xxl_client import XXL
 
@@ -55,33 +56,32 @@ class Executor:
     def __init__(
         self,
         xxl_client: XXL,
+        config: ExecutorConfig,
         *,
         handler: Optional[JobHandler] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
-        max_workers: int = 20,
-        task_timeout: int = 60 * 60,
-        max_queue_length: int = 30,
     ) -> None:
         """执行器，真正的调度任务和策略都在这里
 
         Args:
             xxl_client (XXL): xxl客户端
+            config (ExecutorConfig): 配置参数
             handler (Optional[JobHandler], optional): Defaults to None.
             loop (Optional[asyncio.AbstractEventLoop], optional): Defaults to None.
-            max_workers (int, optional): 执行同步任务的线程池. Defaults to 20.
-            task_timeout (int, optional): 全局的任务超时配置,如果executorTimeout参数存在,以executorTimeout为准. Defaults to 60*60.
-            max_queue_length (int, optional): 单机串行的队列长度，当阻塞的任务大于此值时会抛弃. Defaults to 30.
         """
+
         self.xxl_client = xxl_client
+        self.config = config
+
+        self.handler: JobHandler = handler or JobHandler()
         self.loop = loop or asyncio.get_event_loop()
         self.tasks: Dict[int, asyncio.Task] = {}
         self.queue: Dict[int, List[RunData]] = defaultdict(list)
         self.lock = asyncio.Lock()
-        self.handler: JobHandler = handler or JobHandler()
-        self.thread_pool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="pyxxl_pool")
-        self.task_timeout = task_timeout
-        # 串行队列的最长长度
-        self.max_queue_length = max_queue_length
+        self.thread_pool = ThreadPoolExecutor(
+            max_workers=self.config.max_workers,
+            thread_name_prefix="pyxxl_pool",
+        )
 
     async def shutdown(self) -> None:
         for _, task in self.tasks.items():
@@ -108,13 +108,13 @@ class Executor:
                     await self._cancel(run_data.jobId)
                 elif run_data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
 
-                    if len(self.queue[run_data.jobId]) >= self.max_queue_length:
+                    if len(self.queue[run_data.jobId]) >= self.config.task_queue_length:
                         msg = (
                             "job {job_id} is  SERIAL, queue length more than {max_length}."
                             "logId {log_id}  discard!".format(
                                 job_id=run_data.jobId,
                                 log_id=run_data.logId,
-                                max_length=self.max_queue_length,
+                                max_length=self.config.task_queue_length,
                             )
                         )
                         logger.error(msg)
@@ -126,7 +126,7 @@ class Executor:
                                 job_id=run_data.jobId,
                                 log_id=run_data.logId,
                                 ranked=len(queue) + 1,
-                                max_length=self.max_queue_length,
+                                max_length=self.config.task_queue_length,
                             )
                         )
                         queue.append(run_data)
@@ -160,7 +160,7 @@ class Executor:
                     handler.handler,
                 )
             )
-            result = await asyncio.wait_for(func, data.executorTimeout or self.task_timeout)
+            result = await asyncio.wait_for(func, data.executorTimeout or self.config.task_timeout)
             logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
         except asyncio.CancelledError as e:
@@ -191,6 +191,8 @@ class Executor:
                 logger.warning("Job %s cancelled." % job_id)
 
     async def graceful_close(self, timeout: int = 60) -> None:
+        """优雅关闭"""
+
         async def _graceful_close() -> None:
             while len(self.tasks) > 0:
                 await asyncio.wait(self.tasks.values())
