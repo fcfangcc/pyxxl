@@ -277,6 +277,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        ExecutorConfig
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../executor/" class="md-nav__link">
         Executor
       </a>
@@ -327,90 +341,6 @@
         <li class="md-nav__item">
   <a href="#pyxxl.schema.RunData" class="md-nav__link">
     pyxxl.schema.RunData
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.broadcastIndex" class="md-nav__link">
-    broadcastIndex
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.broadcastTotal" class="md-nav__link">
-    broadcastTotal
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorBlockStrategy" class="md-nav__link">
-    executorBlockStrategy
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorHandler" class="md-nav__link">
-    executorHandler
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorParams" class="md-nav__link">
-    executorParams
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorTimeout" class="md-nav__link">
-    executorTimeout
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.glueSource" class="md-nav__link">
-    glueSource
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.glueType" class="md-nav__link">
-    glueType
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.glueUpdatetime" class="md-nav__link">
-    glueUpdatetime
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.jobId" class="md-nav__link">
-    jobId
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.logDateTime" class="md-nav__link">
-    logDateTime
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.logId" class="md-nav__link">
-    logId
   </a>
   
 </li>
@@ -478,90 +408,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.broadcastIndex" class="md-nav__link">
-    broadcastIndex
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.broadcastTotal" class="md-nav__link">
-    broadcastTotal
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorBlockStrategy" class="md-nav__link">
-    executorBlockStrategy
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorHandler" class="md-nav__link">
-    executorHandler
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorParams" class="md-nav__link">
-    executorParams
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.executorTimeout" class="md-nav__link">
-    executorTimeout
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.glueSource" class="md-nav__link">
-    glueSource
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.glueType" class="md-nav__link">
-    glueType
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.glueUpdatetime" class="md-nav__link">
-    glueUpdatetime
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.jobId" class="md-nav__link">
-    jobId
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.logDateTime" class="md-nav__link">
-    logDateTime
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.schema.RunData.logId" class="md-nav__link">
-    logId
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -591,16 +437,16 @@
 
   
       <p>调度器传入的所有参数，执行函数通过g来获取这些参数</p>
-
-<details class="example">
-  <summary>Example</summary>
-  <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">pyxxl.ctx</span> <span class="kn">import</span> <span class="n">g</span>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">pyxxl.ctx</span> <span class="kn">import</span> <span class="n">g</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nd">@xxxxx</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">xxl_run_data</span><span class="o">.</span><span class="n">logId</span><span class="p">)</span>
 </code></pre></div>
-</details>
+</div>
+
 
 
   
@@ -612,234 +458,6 @@
 
 
 
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.broadcastIndex" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">broadcastIndex</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.broadcastTotal" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">broadcastTotal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.executorBlockStrategy" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">executorBlockStrategy</span><span class="p">:</span> <span class="nb">str</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.executorHandler" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">executorHandler</span><span class="p">:</span> <span class="nb">str</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.executorParams" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">executorParams</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.executorTimeout" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">executorTimeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.glueSource" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">glueSource</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.glueType" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">glueType</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.glueUpdatetime" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">glueUpdatetime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.jobId" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">jobId</span><span class="p">:</span> <span class="nb">int</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.logDateTime" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">logDateTime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.schema.RunData.logId" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">logId</span><span class="p">:</span> <span class="nb">int</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  </div>
-
-</div>
 
 
 
