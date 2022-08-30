@@ -12,7 +12,9 @@
 </a>
 </p>
 
-使用pyxxl可以方便的把Python写的方法注册到xxl-job中,使用xxl-job-admin管理Python定时任务和周期任务
+使用pyxxl可以方便的把Python写的方法注册到[XXL-JOB](https://github.com/xuxueli/xxl-job)中,使用XXL-JOB-ADMIN管理Python定时任务和周期任务
+
+实现原理：通过XXL-JOB提供的RESTful API接口进行对接
 
 ## 已经支持的功能
 
@@ -25,6 +27,12 @@
 ## 待实现
 
 - [x] 自定义日志 和 界面上查看日志
+
+## 适配的XXL-JOB版本
+
+* XXL-JOB:2.3.0
+
+如遇到不兼容的情况请issue告诉我XXL-JOB版本我会尽量适配
 
 ## 如何使用
 
