@@ -100,13 +100,13 @@ class PyxxlRunner:
             handle_signals=handle_signals,
         )
 
-    def runner(self) -> None:
+    def _runner(self) -> None:
         self.run_executor(handle_signals=True)
 
     def run_with_daemon(self) -> None:
         """新开一个进程以后台方式运行,一般和gunicorn一起使用"""
 
-        daemon = Process(target=self.runner, name="pyxxljob", daemon=True)
+        daemon = Process(target=self._runner, name="pyxxljob", daemon=True)
         daemon.start()
         self.daemon = daemon
 
