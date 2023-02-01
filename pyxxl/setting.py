@@ -48,6 +48,8 @@ class ExecutorConfig:
     """是否优雅关闭. Default: True"""
     graceful_timeout: int = 60 * 5
     """优雅关闭的等待时间,超过改时间强制停止任务. Default: 60 * 5"""
+    local_logdir: str = "/tmp/pyxxl"
+    """任务日志存储的本地目录"""
 
     dotenv_path: Optional[str] = None
     """.env文件的路径,默认为当前路径下的.env文件."""

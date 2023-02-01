@@ -55,3 +55,4 @@ repos:
         additional_dependencies:
           - types-requests
           - toml
+          - types-aiofiles

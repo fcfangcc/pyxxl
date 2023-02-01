@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, List, Optional
 from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
+from pyxxl.logger import FileLog
 from pyxxl.schema import HandlerInfo, RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
@@ -82,6 +83,7 @@ class Executor:
             max_workers=self.config.max_workers,
             thread_name_prefix="pyxxl_pool",
         )
+        self.logger_factory = FileLog(self.config.local_logdir)
 
     async def shutdown(self) -> None:
         for _, task in self.tasks.items():
@@ -151,6 +153,7 @@ class Executor:
     async def _run(self, handler: HandlerInfo, start_time: int, data: RunData) -> None:
         try:
             g.set_xxl_run_data(data)
+            g.set_task_logger(self.logger_factory.get_logger(data.logId))
             logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
             func = (
                 handler.handler()
@@ -170,6 +173,7 @@ class Executor:
             logger.exception(err)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
         finally:
+            g.clear()
             await self._finish(data.jobId)
 
     async def _finish(self, job_id: int) -> None:

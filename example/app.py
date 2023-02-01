@@ -34,6 +34,8 @@ async def test_task3():
 
 @app.handler.register(name="sync_func")
 def test_task4():
+    # 如果要在xxl-admin上看到执行日志，打印日志的时候务必用g.logger来打印，默认只打印info及以上的日志
+    g.logger.info("logger to disk.")
     time.sleep(3)
     return "成功3"
 

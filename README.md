@@ -85,6 +85,8 @@ app.run_executor()
 
 
 ```shell
+# if you need. set venv in project.
+# poetry config virtualenvs.in-project true
 poetry install
 # 修改app.py中相关的配置信息,然后启动
 poetry run python example/app.py

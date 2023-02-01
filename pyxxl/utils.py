@@ -6,6 +6,14 @@ from typing import Any, List, Optional
 from pyxxl.ctx import g
 
 
+DEFAULT_FORMAT = (
+    "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "
+    "%(levelname)s %(pathname)s(%(funcName)s:%(lineno)d) - %(message)s"
+)
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+STD_FORMATTER = logging.Formatter(DEFAULT_FORMAT, datefmt=DATE_FORMAT)
+
+
 def get_network_ip() -> str:
     """获取本机地址,会获取首个网络地址"""
     _, _, ipaddrlist = socket.gethostbyname_ex(socket.gethostname())
@@ -29,13 +37,7 @@ def setup_logging(
     custom_handlers: Optional[List[logging.Handler]] = None,
     std_formatter: Optional[logging.Formatter] = None,
 ) -> logging.Logger:
-    if std_formatter is None:
-        DEFAULT_FORMAT = (
-            "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "
-            "%(levelname)s %(pathname)s(%(funcName)s:%(lineno)d) - %(message)s"
-        )
-        DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-        std_formatter = logging.Formatter(DEFAULT_FORMAT, datefmt=DATE_FORMAT)
+    std_formatter = std_formatter or STD_FORMATTER
 
     _init_log_record_factory()
     logger = logging.getLogger("pyxxl")
