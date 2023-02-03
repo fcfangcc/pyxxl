@@ -7,6 +7,7 @@ from typing import AsyncGenerator, Optional
 from aiohttp import web
 
 from pyxxl.executor import Executor, JobHandler
+from pyxxl.logger import FileLog
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
 from pyxxl.xxl_client import XXL
@@ -69,6 +70,8 @@ class PyxxlRunner:
         app["xxl_client"] = self.xxl_client
         app["executor"] = self.executor
         app["register_task"] = self.register_task
+        app["executor_logger"] = FileLog(log_path=self.config.local_logdir)
+
         if self.executor and self.executor.handler:
             logger.info("register with handlers %s", list(self.executor.handler.handlers_info()))
         else:

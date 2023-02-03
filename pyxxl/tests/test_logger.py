@@ -11,28 +11,28 @@ from pyxxl.logger import FileLog, LogRequest, LogResponse
     "req,resp",
     [
         (
-            LogRequest(logDateTim=0, logId=0, fromLineNum=0),
+            LogRequest(logDateTim=0, logId=0, fromLineNum=1),
             LogResponse(
-                fromLineNum=0,
+                fromLineNum=1,
                 toLineNum=20,
-                logContent="".join(str(i) + "\n" for i in range(0, 20)),
+                logContent="".join(str(i) + "\n" for i in range(1, 21)),
                 isEnd=False,
             ),
         ),
         (
-            LogRequest(logDateTim=0, logId=0, fromLineNum=20),
+            LogRequest(logDateTim=0, logId=0, fromLineNum=21),
             LogResponse(
-                fromLineNum=20,
+                fromLineNum=21,
                 toLineNum=40,
-                logContent="".join(str(i) + "\n" for i in range(20, 40)),
+                logContent="".join(str(i) + "\n" for i in range(21, 41)),
                 isEnd=False,
             ),
         ),
         (
-            LogRequest(logDateTim=0, logId=0, fromLineNum=80),
+            LogRequest(logDateTim=0, logId=0, fromLineNum=81),
             LogResponse(
-                fromLineNum=80,
-                toLineNum=80,
+                fromLineNum=81,
+                toLineNum=81,
                 logContent="",
                 isEnd=True,
             ),
@@ -40,15 +40,15 @@ from pyxxl.logger import FileLog, LogRequest, LogResponse
     ],
 )
 async def test_read_file(req, resp):
-    data = "".join(str(i) + "\n" for i in range(0, 80))
+    data = "".join(str(i) + "\n" for i in range(1, 80 + 1))
     async with aiofiles.tempfile.NamedTemporaryFile() as f:
         await f.write(data.encode())
         await f.flush()
         await f.seek(0)
 
         filename = f.name
-        handler = FileLog("")
-        assert await handler.get_log_lines(req, filename=filename) == resp
+        handler = FileLog("", log_tail_lines=20)
+        assert await handler.get_logs(req, filename=filename) == resp
 
 
 @pytest.mark.asyncio

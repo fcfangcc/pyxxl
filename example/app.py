@@ -21,7 +21,9 @@ app = PyxxlRunner(config)
 @app.handler.register(name="demoJobHandler")
 async def test_task():
     # you can get task params with "g"
-    print("get executor params: %s" % g.xxl_run_data.executorParams)
+    g.logger.info("get executor params: %s" % g.xxl_run_data.executorParams)
+    for i in range(30):
+        g.logger.warning("test logger %s" % i)
     await asyncio.sleep(5)
     return "成功..."
 
