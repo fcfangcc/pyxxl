@@ -1,5 +1,7 @@
 import time
 
+from pathlib import Path
+
 import aiofiles
 import pytest
 
@@ -64,3 +66,19 @@ async def test_task_logger():
         read_data = await handler.read_all(log_id)
         for b in ["test error", "test warning", "ERROR", "WARNING"]:
             assert b in read_data
+
+
+@pytest.mark.asyncio
+async def test_task_expired():
+    log_id = int(time.time())
+    async with aiofiles.tempfile.TemporaryDirectory() as d:
+        file_log = FileLog(log_path=d, expired_days=0)
+        logger = file_log.get_logger(log_id, stdout=False)
+        logger.error("test error.")
+        logger.warning("test warning.")
+        logger.handlers.clear()
+
+        log_file = Path(file_log.filename(log_id))
+        assert log_file.exists()
+        await file_log.expired_once()
+        assert log_file.exists() is False
