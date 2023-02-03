@@ -27,7 +27,8 @@ class FileLog:
 
     def __post_init__(self) -> None:
         if not Path(self.log_path).exists():
-            Path(self.log_path).mkdir()
+            Path(self.log_path).mkdir()  # pragma: no cover
+            logger.info("create logdir %s" % self.log_path)  # pragma: no cover
         self.log_tail_lines = self.log_tail_lines or MAX_LOG_TAIL_LINES
 
     def _filename(self, log_id: int) -> str:

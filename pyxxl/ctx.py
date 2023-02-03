@@ -35,7 +35,7 @@ class GlobalVars:
         GlobalVars._set_var("task_logger", logger)
 
     @property
-    def logger(self) -> logging.Logger:
+    def logger(self) -> logging.Logger:  # pragma: no cover
         return self._get_var("task_logger")
 
     def clear(self) -> None:

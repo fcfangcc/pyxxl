@@ -59,7 +59,7 @@ class ExecutorConfig:
             from dotenv import load_dotenv
 
             load_dotenv(self.dotenv_path)
-        except ImportError:
+        except ImportError:  # pragma: no cover
             pass
 
         for param in inspect.signature(ExecutorConfig).parameters.values():
@@ -72,9 +72,6 @@ class ExecutorConfig:
         self._valid_executor_app_name()
 
     def _valid_xxl_admin_baseurl(self) -> None:
-        if not self.xxl_admin_baseurl:
-            raise ValueError("xxl_admin_baseurl is required.")
-
         _admin_url: URL = URL(self.xxl_admin_baseurl)
         if not (_admin_url.scheme.startswith("http") and _admin_url.path.endswith("/")):
             raise ValueError("admin_url must like http://localhost:8080/xxl-job-admin/api/")

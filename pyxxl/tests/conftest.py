@@ -15,7 +15,7 @@ from pyxxl.tests.utils import MokePyxxlRunner, MokeXXL
 from pyxxl.utils import setup_logging
 
 
-setup_logging(logging.INFO)
+setup_logging(logging.INFO, custom_handlers=[logging.FileHandler("./testlogs.log")])
 
 GLOBAL_JOB_ID = 1
 
