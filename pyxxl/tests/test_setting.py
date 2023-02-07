@@ -10,13 +10,6 @@ TEST_ADMIN_URL = "http://localhost:8080/xxl-job-admin/api/"
 
 
 def test_config():
-    # not required
-    with pytest.raises(ValueError, match="admin_url"):
-        ExecutorConfig(xxl_admin_baseurl="dddd", executor_app_name="test")
-
-    with pytest.raises(ValueError, match="executor_app_name"):
-        ExecutorConfig(xxl_admin_baseurl=TEST_ADMIN_URL, executor_app_name="")
-
     setting = ExecutorConfig(
         xxl_admin_baseurl=TEST_ADMIN_URL,
         executor_app_name="test",
@@ -31,3 +24,26 @@ def test_config():
     setting = ExecutorConfig(xxl_admin_baseurl="", executor_app_name="")
     setting.executor_app_name = "fromenv"
     setting.xxl_admin_baseurl = TEST_ADMIN_URL
+    os.environ.clear()
+
+
+@pytest.mark.parametrize(
+    "msg,error,kwargs",
+    [
+        ("admin_url", ValueError, dict(xxl_admin_baseurl="dddd", executor_app_name="test")),
+        ("executor_app_name", ValueError, dict(xxl_admin_baseurl=TEST_ADMIN_URL, executor_app_name="")),
+        (
+            "conflicting",
+            ValueError,
+            dict(
+                xxl_admin_baseurl=TEST_ADMIN_URL,
+                executor_app_name="test",
+                log_local_dir="log_local_dir",
+                log_redis_uri="log_redis_uri",
+            ),
+        ),
+    ],
+)
+def test_error(msg, error, kwargs):
+    with pytest.raises(error, match=msg):
+        ExecutorConfig(**kwargs)

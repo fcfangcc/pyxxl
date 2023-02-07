@@ -1,14 +1,36 @@
+import os
 import time
 
 from pathlib import Path
+from typing import TYPE_CHECKING, Callable
 
 import aiofiles
 import pytest
 
-from pyxxl.logger import FileLog, LogRequest, LogResponse
+from pyxxl.logger import DiskLog, LogBase, RedisLog
+from pyxxl.types import LogRequest, LogResponse
+from pyxxl.utils import try_import
+
+
+if TYPE_CHECKING:
+    import redis
+else:
+    redis = try_import("redis")
+
+REDIS_TEST_URI = os.environ.get("REDIS_TEST_URI", "redis://localhost")
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "get_log",
+    [
+        lambda: DiskLog("", log_tail_lines=20),
+        pytest.param(
+            lambda: RedisLog("pyxxl-test", REDIS_TEST_URI, log_tail_lines=20),
+            marks=pytest.mark.skipif(not redis, reason="no redis package."),
+        ),
+    ],
+)
 @pytest.mark.parametrize(
     "req,resp",
     [
@@ -41,44 +63,53 @@ from pyxxl.logger import FileLog, LogRequest, LogResponse
         ),
     ],
 )
-async def test_read_file(req, resp):
-    data = "".join(str(i) + "\n" for i in range(1, 80 + 1))
-    async with aiofiles.tempfile.NamedTemporaryFile() as f:
-        await f.write(data.encode())
-        await f.flush()
-        await f.seek(0)
-
-        filename = f.name
-        handler = FileLog("", log_tail_lines=20)
-        assert await handler.get_logs(req, filename=filename) == resp
+async def test_read_file(get_log: Callable[..., LogBase], req, resp):
+    log = get_log()
+    data = [str(i).encode() + b"\n" for i in range(1, 80 + 1)]
+    async with log.mock_write(*data) as key:
+        assert await log.get_logs(req, key=key) == resp
 
 
 @pytest.mark.asyncio
-async def test_task_logger():
+@pytest.mark.parametrize(
+    "get_log",
+    [
+        lambda: DiskLog("", log_tail_lines=20),
+        pytest.param(
+            lambda: RedisLog("pyxxl-test", REDIS_TEST_URI, log_tail_lines=20),
+            marks=pytest.mark.skipif(not redis, reason="no redis package."),
+        ),
+        pytest.param(
+            lambda: RedisLog("pyxxl-test", redis.ConnectionPool.from_url(REDIS_TEST_URI), log_tail_lines=20),
+            marks=pytest.mark.skipif(not redis, reason="no redis package."),
+        ),
+    ],
+)
+async def test_disk_logger(get_log: Callable[..., LogBase]):
+    log = get_log()
     log_id = int(time.time())
-    async with aiofiles.tempfile.TemporaryDirectory() as d:
-        handler = FileLog(log_path=d)
-        logger = handler.get_logger(log_id, stdout=False)
+    async with log.mock_logger(log_id) as mock_log:
+        logger = mock_log.get_logger(log_id)
         logger.error("test error.")
         logger.warning("test warning.")
         logger.handlers.clear()
 
-        read_data = await handler.read_all(log_id)
+        read_data = await mock_log.read_all(log_id)
         for b in ["test error", "test warning", "ERROR", "WARNING"]:
             assert b in read_data
 
 
 @pytest.mark.asyncio
-async def test_task_expired():
+async def test_disk_expired():
     log_id = int(time.time())
     async with aiofiles.tempfile.TemporaryDirectory() as d:
-        file_log = FileLog(log_path=d, expired_days=0)
+        file_log = DiskLog(log_path=d, expired_days=0)
         logger = file_log.get_logger(log_id, stdout=False)
         logger.error("test error.")
         logger.warning("test warning.")
         logger.handlers.clear()
 
-        log_file = Path(file_log.filename(log_id))
+        log_file = Path(file_log.key(log_id))
         assert log_file.exists()
         await file_log.expired_once()
         assert log_file.exists() is False

@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional
 from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
-from pyxxl.logger import FileLog
+from pyxxl.logger import DiskLog
 from pyxxl.schema import HandlerInfo, RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
@@ -83,7 +83,7 @@ class Executor:
             max_workers=self.config.max_workers,
             thread_name_prefix="pyxxl_pool",
         )
-        self.logger_factory = FileLog(self.config.local_logdir)
+        self.logger_factory = DiskLog(self.config.log_local_dir)
 
     async def shutdown(self) -> None:
         for _, task in self.tasks.items():

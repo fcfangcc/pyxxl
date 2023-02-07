@@ -1,3 +1,4 @@
+import importlib
 import logging
 import socket
 
@@ -54,3 +55,11 @@ def setup_logging(
             h.setLevel(level)
             logger.addHandler(h)
     return logger
+
+
+def try_import(module: str) -> Optional[Any]:
+    try:
+        return importlib.import_module(module)
+    except ImportError:
+        pass
+    return None

@@ -48,10 +48,12 @@ class ExecutorConfig:
     """是否优雅关闭. Default: True"""
     graceful_timeout: int = 60 * 5
     """优雅关闭的等待时间,超过改时间强制停止任务. Default: 60 * 5"""
-    local_logdir: str = "/tmp/pyxxl"
+    log_local_dir: str = "/tmp/pyxxl"
     """任务日志存储的本地目录"""
-    expired_days: int = 14
+    log_expired_days: int = 14
     """任务日志存储的本地的过期天数. Default: 14"""
+    log_redis_uri: str = ""
+    """任务日志存储到redis的连接地址"""
 
     dotenv_path: Optional[str] = None
     """.env文件的路径,默认为当前路径下的.env文件."""
@@ -72,6 +74,7 @@ class ExecutorConfig:
 
         self._valid_xxl_admin_baseurl()
         self._valid_executor_app_name()
+        self._valid_logger_target()
 
     def _valid_xxl_admin_baseurl(self) -> None:
         _admin_url: URL = URL(self.xxl_admin_baseurl)
@@ -81,6 +84,10 @@ class ExecutorConfig:
     def _valid_executor_app_name(self) -> None:
         if not self.executor_app_name:
             raise ValueError("executor_app_name is required.")
+
+    def _valid_logger_target(self) -> None:
+        if self.log_local_dir and self.log_redis_uri:
+            raise ValueError("log_local_dir and log_redis_uri conflicting.")
 
     @property
     def executor_baseurl(self) -> str:

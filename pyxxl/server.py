@@ -9,7 +9,7 @@ from pyxxl.schema import RunData
 
 
 if TYPE_CHECKING:
-    from pyxxl.logger import FileLog
+    from pyxxl.logger import DiskLog
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ async def log(request: web.Request) -> web.Response:
     """
     data = await request.json()
     logger.debug("get log request %s" % data)
-    executor_logger: FileLog = request.app["executor_logger"]
+    executor_logger: DiskLog = request.app["executor_logger"]
     response = {
         "code": 200,
         "msg": None,

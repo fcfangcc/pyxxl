@@ -7,7 +7,7 @@ from typing import AsyncGenerator, Optional
 from aiohttp import web
 
 from pyxxl.executor import Executor, JobHandler
-from pyxxl.logger import FileLog
+from pyxxl.logger import DiskLog
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
 from pyxxl.xxl_client import XXL
@@ -62,7 +62,7 @@ class PyxxlRunner:
         executor = Executor(xxl_client, config=self.config, handler=self.handler)
 
         register_task = asyncio.create_task(self._register_task(xxl_client), name="register_task")
-        executor_logger = FileLog(log_path=self.config.local_logdir, expired_days=self.config.expired_days)
+        executor_logger = DiskLog(log_path=self.config.log_local_dir, expired_days=self.config.log_expired_days)
         executor_logger_task = asyncio.create_task(executor_logger.expired_loop(), name="executor_logger_task")
         app["xxl_client"] = xxl_client
         app["executor"] = executor

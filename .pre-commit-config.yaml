@@ -56,3 +56,4 @@ repos:
           - types-requests
           - toml
           - types-aiofiles
+          - types-redis
