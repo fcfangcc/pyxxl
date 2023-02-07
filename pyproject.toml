@@ -26,7 +26,7 @@ all = ["redis", "python-dotenv"]
 
 [tool.poetry.group.doc.dependencies]
 mkdocs = "^1.4.2"
-mkdocstrings = "^0.20.0"
+mkdocstrings = { version = "^0.20.0", extras = ["python"] }
 mkdocs-material = "^9.0.9"
 mdx-include = "^1.4.2"
 
