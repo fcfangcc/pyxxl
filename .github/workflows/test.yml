@@ -19,7 +19,7 @@ jobs:
         python-version: ["3.8", "3.9", "3.10"]
 
     services:
-      mysql:
+      redis:
         image: redis:7
         ports:
           - 6379:6379
