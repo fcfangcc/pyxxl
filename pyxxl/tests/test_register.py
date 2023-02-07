@@ -7,6 +7,7 @@ from pyxxl.executor import Executor
 # pylint: disable=function-redefined
 @pytest.mark.asyncio
 async def test_hander_error(executor: Executor):
+    executor.reset_handler()
     with pytest.raises(JobRegisterError):
 
         @executor.handler.register
@@ -21,14 +22,16 @@ async def test_hander_error(executor: Executor):
 # pylint: disable=function-redefined
 @pytest.mark.asyncio
 async def test_hander(executor: Executor):
-    @executor.handler.register
-    def text_hander1():
+    executor.reset_handler()
+
+    @executor.register
+    def test_hander1():
         ...
 
-    @executor.handler.register(replace=True)
-    async def text_hander1():  # noqa: F811
+    @executor.register(replace=True)
+    async def test_hander1():  # noqa: F811
         ...
 
-    @executor.handler.register(name="text_hander_dup")
-    def text_hander1():  # noqa: F811
+    @executor.register(name="test_hander1_dup")
+    def test_hander1():  # noqa: F811
         ...

@@ -8,17 +8,17 @@ from pyxxl.schema import RunData
 
 @pytest.mark.asyncio
 async def test_runner_callback(executor: Executor):
-    @executor.handler.register
-    async def text_ctx():
+    @executor.register
+    async def test_ctx():
         logId = g.xxl_run_data.logId
         assert logId == 1
 
-    @executor.handler.register
-    def text_ctx_sync():
+    @executor.register
+    def test_ctx_sync():
         logId = g.xxl_run_data.logId
         assert logId == 1
 
-    for handler in ["text_ctx", "text_ctx_sync"]:
+    for handler in ["test_ctx", "test_ctx_sync"]:
         data = RunData(
             **dict(
                 logId=1,

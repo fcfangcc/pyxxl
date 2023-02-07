@@ -86,5 +86,11 @@ async def test_kill(cli: TestClient):
 @pytest.mark.asyncio
 async def test_log(cli: TestClient):
     resp, jobId = await _send_demoJobHandler(cli)
-    resp = await cli.post("/log", json={"jobId": jobId})
+    resp = await cli.post(
+        "/log",
+        json={
+            "logId": jobId,
+            "fromLineNum": 1,
+        },
+    )
     assert (await resp.json())["code"] == 200

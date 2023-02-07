@@ -38,6 +38,12 @@
 
 ```shell
 pip install pyxxl
+# 如果日志需要写入redis
+pip install pyxxl[redis]
+# 如果需要从.env加载配置
+pip install pyxxl[dotenv]
+# 安装所有功能
+pip install pyxxl[all]
 ```
 
 ```python
@@ -85,7 +91,9 @@ app.run_executor()
 
 
 ```shell
-poetry install
+# if you need. set venv in project.
+# poetry config virtualenvs.in-project true
+poetry install --all-extras
 # 修改app.py中相关的配置信息,然后启动
 poetry run python example/app.py
 ```

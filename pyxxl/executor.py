@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import logging
 import time
 
@@ -10,6 +9,7 @@ from typing import Any, Callable, Dict, List, Optional
 from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
+from pyxxl.logger import DiskLog
 from pyxxl.schema import HandlerInfo, RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class JobHandler:
-    _handlers: Dict[str, HandlerInfo] = {}
+    def __init__(self) -> None:
+        self._handlers: Dict[str, HandlerInfo] = {}
 
     def register(
         self, *args: Any, name: Optional[str] = None, replace: bool = False
@@ -34,11 +35,7 @@ class JobHandler:
             self._handlers[handler_name] = HandlerInfo(handler=func)
             logger.debug("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
 
-            @functools.wraps(func)
-            def inner_wrapper(*args: Any, **kwargs: Any) -> Any:
-                return func(*args, **kwargs)
-
-            return inner_wrapper
+            return func
 
         if len(args) == 1:
             return func_wrapper(args[0])
@@ -82,6 +79,7 @@ class Executor:
             max_workers=self.config.max_workers,
             thread_name_prefix="pyxxl_pool",
         )
+        self.logger_factory = DiskLog(self.config.log_local_dir)
 
     async def shutdown(self) -> None:
         for _, task in self.tasks.items():
@@ -151,6 +149,7 @@ class Executor:
     async def _run(self, handler: HandlerInfo, start_time: int, data: RunData) -> None:
         try:
             g.set_xxl_run_data(data)
+            g.set_task_logger(self.logger_factory.get_logger(data.logId))
             logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
             func = (
                 handler.handler()
@@ -170,6 +169,7 @@ class Executor:
             logger.exception(err)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
         finally:
+            g.clear()
             await self._finish(data.jobId)
 
     async def _finish(self, job_id: int) -> None:
@@ -199,5 +199,9 @@ class Executor:
 
         await asyncio.wait_for(_graceful_close(), timeout=timeout)
 
-    def reset_handler(self, handler: JobHandler) -> None:
-        self.handler = handler
+    def reset_handler(self, handler: Optional[JobHandler] = None) -> None:
+        self.handler = handler or JobHandler()
+
+    @property
+    def register(self) -> Any:
+        return self.handler.register

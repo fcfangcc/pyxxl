@@ -1,3 +1,5 @@
+import logging
+
 from contextvars import ContextVar
 from typing import Any, Optional
 
@@ -27,6 +29,17 @@ class GlobalVars:
     @property
     def xxl_run_data(self) -> RunData:
         return self._get_var("xxl_kwargs")
+
+    @staticmethod
+    def set_task_logger(logger: logging.Logger) -> None:
+        GlobalVars._set_var("task_logger", logger)
+
+    @property
+    def logger(self) -> logging.Logger:  # pragma: no cover
+        return self._get_var("task_logger")
+
+    def clear(self) -> None:
+        _global_vars.get().clear()
 
 
 g = GlobalVars()

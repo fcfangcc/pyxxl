@@ -21,7 +21,9 @@ app = PyxxlRunner(config)
 @app.handler.register(name="demoJobHandler")
 async def test_task():
     # you can get task params with "g"
-    print("get executor params: %s" % g.xxl_run_data.executorParams)
+    g.logger.info("get executor params: %s" % g.xxl_run_data.executorParams)
+    for i in range(30):
+        g.logger.warning("test logger %s" % i)
     await asyncio.sleep(5)
     return "成功..."
 
@@ -34,6 +36,8 @@ async def test_task3():
 
 @app.handler.register(name="sync_func")
 def test_task4():
+    # 如果要在xxl-admin上看到执行日志，打印日志的时候务必用g.logger来打印，默认只打印info及以上的日志
+    g.logger.info("logger to disk.")
     time.sleep(3)
     return "成功3"
 

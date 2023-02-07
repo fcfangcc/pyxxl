@@ -1,10 +1,15 @@
 import logging
 
+from typing import TYPE_CHECKING
+
 from aiohttp import web
 
 from pyxxl import error
 from pyxxl.schema import RunData
 
+
+if TYPE_CHECKING:
+    from pyxxl.logger import LogBase
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +70,6 @@ async def kill(request: web.Request) -> web.Response:
     return web.json_response(dict(code=200, msg=None))
 
 
-# todo
 @routes.post("/log")
 async def log(request: web.Request) -> web.Response:
     """
@@ -76,13 +80,13 @@ async def log(request: web.Request) -> web.Response:
     }
     """
     data = await request.json()
-    logger.info("log %s" % data)
+    logger.debug("get log request %s" % data)
+    executor_log: LogBase = request.app["executor_log"]
     response = {
         "code": 200,
         "msg": None,
-        "content": {"fromLineNum": 1, "toLineNum": 1, "logContent": "xxx", "isEnd": True},
+        "content": await executor_log.get_logs(data),
     }
-
     return web.json_response(response)
 
 

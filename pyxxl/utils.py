@@ -1,9 +1,18 @@
+import importlib
 import logging
 import socket
 
 from typing import Any, List, Optional
 
 from pyxxl.ctx import g
+
+
+DEFAULT_FORMAT = (
+    "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "
+    "%(levelname)s %(pathname)s(%(funcName)s:%(lineno)d) - %(message)s"
+)
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+STD_FORMATTER = logging.Formatter(DEFAULT_FORMAT, datefmt=DATE_FORMAT)
 
 
 def get_network_ip() -> str:
@@ -29,13 +38,7 @@ def setup_logging(
     custom_handlers: Optional[List[logging.Handler]] = None,
     std_formatter: Optional[logging.Formatter] = None,
 ) -> logging.Logger:
-    if std_formatter is None:
-        DEFAULT_FORMAT = (
-            "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "
-            "%(levelname)s %(pathname)s(%(funcName)s:%(lineno)d) - %(message)s"
-        )
-        DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-        std_formatter = logging.Formatter(DEFAULT_FORMAT, datefmt=DATE_FORMAT)
+    std_formatter = std_formatter or STD_FORMATTER
 
     _init_log_record_factory()
     logger = logging.getLogger("pyxxl")
@@ -52,3 +55,11 @@ def setup_logging(
             h.setLevel(level)
             logger.addHandler(h)
     return logger
+
+
+def try_import(module: str) -> Optional[Any]:
+    try:
+        return importlib.import_module(module)
+    except ImportError:
+        pass
+    return None

@@ -3,7 +3,7 @@ import logging
 import os
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Literal, Optional
 
 from yarl import URL
 
@@ -49,6 +49,15 @@ class ExecutorConfig:
     graceful_timeout: int = 60 * 5
     """优雅关闭的等待时间,超过改时间强制停止任务. Default: 60 * 5"""
 
+    log_target: Literal["disk", "redis"] = "disk"
+    """任务日志存储的地方.  Default: disk"""
+    log_local_dir: str = "/tmp/pyxxl"
+    """任务日志存储的本地目录"""
+    log_redis_uri: str = ""
+    """任务日志存储到redis的连接地址"""
+    log_expired_days: int = 14
+    """任务日志存储的本地的过期天数. Default: 14"""
+
     dotenv_path: Optional[str] = None
     """.env文件的路径,默认为当前路径下的.env文件."""
 
@@ -57,7 +66,7 @@ class ExecutorConfig:
             from dotenv import load_dotenv
 
             load_dotenv(self.dotenv_path)
-        except ImportError:
+        except ImportError:  # pragma: no cover
             pass
 
         for param in inspect.signature(ExecutorConfig).parameters.values():
@@ -68,11 +77,9 @@ class ExecutorConfig:
 
         self._valid_xxl_admin_baseurl()
         self._valid_executor_app_name()
+        self._valid_logger_target()
 
     def _valid_xxl_admin_baseurl(self) -> None:
-        if not self.xxl_admin_baseurl:
-            raise ValueError("xxl_admin_baseurl is required.")
-
         _admin_url: URL = URL(self.xxl_admin_baseurl)
         if not (_admin_url.scheme.startswith("http") and _admin_url.path.endswith("/")):
             raise ValueError("admin_url must like http://localhost:8080/xxl-job-admin/api/")
@@ -80,6 +87,13 @@ class ExecutorConfig:
     def _valid_executor_app_name(self) -> None:
         if not self.executor_app_name:
             raise ValueError("executor_app_name is required.")
+
+    def _valid_logger_target(self) -> None:
+        if self.log_target == "disk" and not self.log_local_dir:
+            raise ValueError("log_target 'disk' config item 'log_local_dir' is necessary.")
+
+        if self.log_target == "redis" and not self.log_redis_uri:
+            raise ValueError("log_target 'redis' config item 'log_redis_uri' is necessary.")
 
     @property
     def executor_baseurl(self) -> str:
