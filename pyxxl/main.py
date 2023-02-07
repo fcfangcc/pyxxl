@@ -7,7 +7,7 @@ from typing import AsyncGenerator, Optional
 from aiohttp import web
 
 from pyxxl.executor import Executor, JobHandler
-from pyxxl.logger import DiskLog
+from pyxxl.logger import DiskLog, LogBase, RedisLog
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
 from pyxxl.xxl_client import XXL
@@ -57,16 +57,28 @@ class PyxxlRunner:
         """for moke"""
         return XXL(self.config.xxl_admin_baseurl, token=self.config.access_token)
 
+    def _get_log(self) -> LogBase:
+        if self.config.log_target == "disk":
+            return DiskLog(log_path=self.config.log_local_dir, expired_days=self.config.log_expired_days)
+
+        if self.config.log_target == "redis":
+            return RedisLog(
+                self.config.executor_app_name, self.config.log_redis_uri, expired_days=self.config.log_expired_days
+            )
+
+        raise NotImplementedError
+
     async def _cleanup_ctx(self, app: web.Application) -> AsyncGenerator:
         xxl_client = self._get_xxl_clint()
         executor = Executor(xxl_client, config=self.config, handler=self.handler)
-
         register_task = asyncio.create_task(self._register_task(xxl_client), name="register_task")
-        executor_logger = DiskLog(log_path=self.config.log_local_dir, expired_days=self.config.log_expired_days)
-        executor_logger_task = asyncio.create_task(executor_logger.expired_loop(), name="executor_logger_task")
+        # setup task log
+        executor_log = self._get_log()
+        executor_log_task = asyncio.create_task(executor_log.expired_loop(), name="log_task")
+
         app["xxl_client"] = xxl_client
         app["executor"] = executor
-        app["executor_logger"] = executor_logger
+        app["executor_log"] = executor_log
 
         if executor.handler:
             logger.info("register with handlers %s", list(executor.handler.handlers_info()))
@@ -76,7 +88,7 @@ class PyxxlRunner:
         yield
 
         register_task.cancel()
-        executor_logger_task.cancel()
+        executor_log_task.cancel()
         await xxl_client.registryRemove(self.config.executor_app_name, self.config.executor_baseurl)
         if self.config.graceful_close:
             await executor.graceful_close(self.config.graceful_timeout)

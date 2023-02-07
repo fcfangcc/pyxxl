@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
 import pytest_asyncio
@@ -11,13 +11,21 @@ from pytest_aiohttp.plugin import AiohttpClient, TestClient
 
 from pyxxl import ExecutorConfig
 from pyxxl.executor import Executor
-from pyxxl.tests.utils import MokePyxxlRunner, MokeXXL
+from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI, MokePyxxlRunner, MokeXXL
 from pyxxl.utils import setup_logging
 
 
 setup_logging(logging.INFO, custom_handlers=[logging.FileHandler("./testlogs.log")])
 
 GLOBAL_JOB_ID = 1
+GLOBAL_CONFIG: Any = dict(
+    xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
+    executor_app_name="xxl-job-executor-sample",
+    executor_host="127.0.0.1",
+    graceful_close=False,
+)
+
+xxl_admin_baseurl = "http://localhost:8080/xxl-job-admin/api/"
 
 
 def _create_job_id() -> int:
@@ -34,25 +42,26 @@ def event_loop() -> Generator:
     loop.close()
 
 
-@pytest.fixture(scope="session")
-def executor_config() -> ExecutorConfig:
-    return ExecutorConfig(
-        xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
-        executor_app_name="xxl-job-executor-sample",
-        executor_host="127.0.0.1",
-        graceful_close=False,
-    )
+@pytest.fixture(
+    scope="session",
+    params=[
+        ExecutorConfig(**GLOBAL_CONFIG),
+        pytest.param(
+            ExecutorConfig(**GLOBAL_CONFIG, log_target="redis", log_redis_uri=REDIS_TEST_URI),
+            marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
+        ),
+    ],
+    ids=["disk", "redis"],
+)
+def executor(request: Any) -> Executor:
+    print(type(request))
+    return Executor(MokeXXL("http://localhost:8080/xxl-job-admin/api/"), request.param, handler=None)
 
 
 @pytest.fixture(scope="session")
-def executor(executor_config: ExecutorConfig) -> Executor:
-    return Executor(MokeXXL("http://localhost:8080/xxl-job-admin/api/"), executor_config)
+def web_app(executor: Executor) -> Application:
 
-
-@pytest.fixture(scope="session")
-def web_app(executor_config: ExecutorConfig) -> Application:
-
-    runner = MokePyxxlRunner(executor_config)
+    runner = MokePyxxlRunner(executor.config)
 
     @runner.handler.register(name="demoJobHandler")
     async def test_task() -> None:

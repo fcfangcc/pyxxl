@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import logging
 import time
 
@@ -21,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class JobHandler:
-    _handlers: Dict[str, HandlerInfo] = {}
+    def __init__(self) -> None:
+        self._handlers: Dict[str, HandlerInfo] = {}
 
     def register(
         self, *args: Any, name: Optional[str] = None, replace: bool = False
@@ -35,11 +35,7 @@ class JobHandler:
             self._handlers[handler_name] = HandlerInfo(handler=func)
             logger.debug("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
 
-            @functools.wraps(func)
-            def inner_wrapper(*args: Any, **kwargs: Any) -> Any:
-                return func(*args, **kwargs)
-
-            return inner_wrapper
+            return func
 
         if len(args) == 1:
             return func_wrapper(args[0])
@@ -203,5 +199,9 @@ class Executor:
 
         await asyncio.wait_for(_graceful_close(), timeout=timeout)
 
-    def reset_handler(self, handler: JobHandler) -> None:
-        self.handler = handler
+    def reset_handler(self, handler: Optional[JobHandler] = None) -> None:
+        self.handler = handler or JobHandler()
+
+    @property
+    def register(self) -> Any:
+        return self.handler.register

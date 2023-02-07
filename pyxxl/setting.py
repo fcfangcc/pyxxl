@@ -3,7 +3,7 @@ import logging
 import os
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Literal, Optional
 
 from yarl import URL
 
@@ -48,12 +48,15 @@ class ExecutorConfig:
     """是否优雅关闭. Default: True"""
     graceful_timeout: int = 60 * 5
     """优雅关闭的等待时间,超过改时间强制停止任务. Default: 60 * 5"""
+
+    log_target: Literal["disk", "redis"] = "disk"
+    """任务日志存储的地方.  Default: disk"""
     log_local_dir: str = "/tmp/pyxxl"
     """任务日志存储的本地目录"""
-    log_expired_days: int = 14
-    """任务日志存储的本地的过期天数. Default: 14"""
     log_redis_uri: str = ""
     """任务日志存储到redis的连接地址"""
+    log_expired_days: int = 14
+    """任务日志存储的本地的过期天数. Default: 14"""
 
     dotenv_path: Optional[str] = None
     """.env文件的路径,默认为当前路径下的.env文件."""
@@ -86,8 +89,11 @@ class ExecutorConfig:
             raise ValueError("executor_app_name is required.")
 
     def _valid_logger_target(self) -> None:
-        if self.log_local_dir and self.log_redis_uri:
-            raise ValueError("log_local_dir and log_redis_uri conflicting.")
+        if self.log_target == "disk" and not self.log_local_dir:
+            raise ValueError("log_target 'disk' config item 'log_local_dir' is necessary.")
+
+        if self.log_target == "redis" and not self.log_redis_uri:
+            raise ValueError("log_target 'redis' config item 'log_redis_uri' is necessary.")
 
     @property
     def executor_baseurl(self) -> str:

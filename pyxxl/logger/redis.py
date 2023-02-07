@@ -86,7 +86,7 @@ class RedisLog(LogBase):
     def key(self, log_id: int) -> str:
         return KEY_PREFIX.format(app=self.app, log_id=log_id)
 
-    async def read_all(self, log_id: int, *, key: str = None) -> str:
+    async def read_task_logs(self, log_id: int, *, key: str = None) -> str:
         key = key or self.key(log_id)
         # todo: use async
         return "".join(i.decode() for i in self.rclient.lrange(key, 0, -1))
@@ -110,9 +110,6 @@ class RedisLog(LogBase):
             logContent=logs,
             isEnd=llen <= to_line,
         )
-
-    async def expired_once(self) -> None:
-        ...
 
     @asynccontextmanager
     async def mock_write(self, *lines: Any) -> AsyncGenerator[str, None]:

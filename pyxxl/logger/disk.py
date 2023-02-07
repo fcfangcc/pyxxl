@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import time
@@ -76,7 +75,7 @@ class DiskLog(LogBase):
             isEnd=is_end,
         )
 
-    async def read_all(self, log_id: int, *, key: str = None) -> str:
+    async def read_task_logs(self, log_id: int, *, key: str = None) -> str:
         key = key or self.key(log_id)
         async with aiofiles.open(key, mode="r") as f:
             return await f.read()
@@ -95,16 +94,6 @@ class DiskLog(LogBase):
             logger.info("delete expired logs [{}] - {}".format(len(del_list), " | ".join(str(i) for i in del_list)))
             for i in del_list:
                 i.unlink()
-
-    async def expired_loop(self, seconds: int = 3600) -> None:
-        """
-        Args:
-            seconds (int, optional): one loop seconds. Defaults to 3600.
-        """
-        logger.info("start expired_loop...")
-        while True:
-            await self.expired_once()
-            await asyncio.sleep(seconds)
 
     @asynccontextmanager
     async def mock_write(self, *lines: Any) -> AsyncGenerator[str, None]:

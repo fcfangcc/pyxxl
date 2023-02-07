@@ -33,13 +33,23 @@ def test_config():
         ("admin_url", ValueError, dict(xxl_admin_baseurl="dddd", executor_app_name="test")),
         ("executor_app_name", ValueError, dict(xxl_admin_baseurl=TEST_ADMIN_URL, executor_app_name="")),
         (
-            "conflicting",
+            "log_local_dir",
             ValueError,
             dict(
                 xxl_admin_baseurl=TEST_ADMIN_URL,
                 executor_app_name="test",
-                log_local_dir="log_local_dir",
-                log_redis_uri="log_redis_uri",
+                log_target="disk",
+                log_local_dir="",
+            ),
+        ),
+        (
+            "log_redis_uri",
+            ValueError,
+            dict(
+                xxl_admin_baseurl=TEST_ADMIN_URL,
+                executor_app_name="test",
+                log_target="redis",
+                log_redis_uri="",
             ),
         ),
     ],

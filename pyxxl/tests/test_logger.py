@@ -1,4 +1,3 @@
-import os
 import time
 
 from pathlib import Path
@@ -8,6 +7,7 @@ import aiofiles
 import pytest
 
 from pyxxl.logger import DiskLog, LogBase, RedisLog
+from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI
 from pyxxl.types import LogRequest, LogResponse
 from pyxxl.utils import try_import
 
@@ -17,8 +17,6 @@ if TYPE_CHECKING:
 else:
     redis = try_import("redis")
 
-REDIS_TEST_URI = os.environ.get("REDIS_TEST_URI", "redis://localhost")
-
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -27,7 +25,7 @@ REDIS_TEST_URI = os.environ.get("REDIS_TEST_URI", "redis://localhost")
         lambda: DiskLog("", log_tail_lines=20),
         pytest.param(
             lambda: RedisLog("pyxxl-test", REDIS_TEST_URI, log_tail_lines=20),
-            marks=pytest.mark.skipif(not redis, reason="no redis package."),
+            marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
         ),
     ],
 )
@@ -77,11 +75,11 @@ async def test_read_file(get_log: Callable[..., LogBase], req, resp):
         lambda: DiskLog("", log_tail_lines=20),
         pytest.param(
             lambda: RedisLog("pyxxl-test", REDIS_TEST_URI, log_tail_lines=20),
-            marks=pytest.mark.skipif(not redis, reason="no redis package."),
+            marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
         ),
         pytest.param(
             lambda: RedisLog("pyxxl-test", redis.ConnectionPool.from_url(REDIS_TEST_URI), log_tail_lines=20),
-            marks=pytest.mark.skipif(not redis, reason="no redis package."),
+            marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
         ),
     ],
 )
@@ -94,7 +92,7 @@ async def test_disk_logger(get_log: Callable[..., LogBase]):
         logger.warning("test warning.")
         logger.handlers.clear()
 
-        read_data = await mock_log.read_all(log_id)
+        read_data = await mock_log.read_task_logs(log_id)
         for b in ["test error", "test warning", "ERROR", "WARNING"]:
             assert b in read_data
 

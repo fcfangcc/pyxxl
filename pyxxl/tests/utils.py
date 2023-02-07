@@ -1,6 +1,9 @@
+import os
+
 from typing import Any, Dict, Optional
 
 from pyxxl.main import PyxxlRunner
+from pyxxl.utils import try_import
 from pyxxl.xxl_client import XXL, JsonType, Response
 
 
@@ -20,3 +23,7 @@ class MokeXXL(XXL):
 class MokePyxxlRunner(PyxxlRunner):
     def _get_xxl_clint(self) -> MokeXXL:
         return MokeXXL(self.config.xxl_admin_baseurl, token=self.config.access_token)
+
+
+REDIS_TEST_URI = os.environ.get("REDIS_TEST_URI", "redis://localhost")
+INSTALL_REDIS = bool(try_import("redis"))
