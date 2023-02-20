@@ -147,10 +147,10 @@ class Executor:
         return job_id in self.tasks
 
     async def _run(self, handler: HandlerInfo, start_time: int, data: RunData) -> None:
+        g.set_xxl_run_data(data)
+        g.set_task_logger(self.logger_factory.get_logger(data.logId))
         try:
-            g.set_xxl_run_data(data)
-            g.set_task_logger(self.logger_factory.get_logger(data.logId))
-            logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
+            g.logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
             func = (
                 handler.handler()
                 if handler.is_async
@@ -160,13 +160,13 @@ class Executor:
                 )
             )
             result = await asyncio.wait_for(func, data.executorTimeout or self.config.task_timeout)
-            logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
+            g.logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
         except asyncio.CancelledError as e:
-            logger.warning(e, exc_info=True)
+            g.logger.warning(e, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg="CancelledError")
         except Exception as err:  # pylint: disable=broad-except
-            logger.exception(err)
+            g.logger.exception(err)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
         finally:
             g.clear()

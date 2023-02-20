@@ -51,8 +51,8 @@ class ExecutorConfig:
 
     log_target: Literal["disk", "redis"] = "disk"
     """任务日志存储的地方.  Default: disk"""
-    log_local_dir: str = "/tmp/pyxxl"
-    """任务日志存储的本地目录"""
+    log_local_dir: str = "logs"
+    """任务日志存储的本地目录,默认为当前目录logs文件夹"""
     log_redis_uri: str = ""
     """任务日志存储到redis的连接地址"""
     log_expired_days: int = 14
