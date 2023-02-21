@@ -1,10 +1,8 @@
 import logging
-
 from contextvars import ContextVar
 from typing import Any, Optional
 
 from pyxxl.schema import RunData
-
 
 _global_vars: ContextVar[dict] = ContextVar("pyxxl_vars", default={})
 

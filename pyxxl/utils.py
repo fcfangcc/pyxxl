@@ -1,11 +1,9 @@
 import importlib
 import logging
 import socket
-
 from typing import Any, List, Optional
 
 from pyxxl.ctx import g
-
 
 DEFAULT_FORMAT = (
     "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "

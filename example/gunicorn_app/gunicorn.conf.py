@@ -1,9 +1,7 @@
 import atexit
-
 from multiprocessing.util import _exit_function
 
 from pyxxl import ExecutorConfig, PyxxlRunner
-
 
 bind = ["0.0.0.0:8000"]
 backlog = 512

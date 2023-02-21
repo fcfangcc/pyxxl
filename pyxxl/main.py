@@ -1,6 +1,5 @@
 import asyncio
 import logging
-
 from multiprocessing import Process
 from typing import AsyncGenerator, Optional
 
@@ -11,7 +10,6 @@ from pyxxl.logger import DiskLog, LogBase, RedisLog
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
 from pyxxl.xxl_client import XXL
-
 
 logger = logging.getLogger(__name__)
 

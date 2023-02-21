@@ -1,6 +1,5 @@
 from typing import Any, Callable, TypedDict, TypeVar
 
-
 Handler0 = Callable[[Any, Any], Any]
 Handler1 = Callable[..., Any]
 

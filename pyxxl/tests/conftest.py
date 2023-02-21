@@ -1,11 +1,9 @@
 import asyncio
 import logging
-
 from typing import Any, Generator
 
 import pytest
 import pytest_asyncio
-
 from aiohttp.web import Application
 from pytest_aiohttp.plugin import AiohttpClient, TestClient
 
@@ -13,7 +11,6 @@ from pyxxl import ExecutorConfig
 from pyxxl.executor import Executor
 from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI, MokePyxxlRunner, MokeXXL
 from pyxxl.utils import setup_logging
-
 
 setup_logging(logging.INFO, custom_handlers=[logging.FileHandler("./testlogs.log")])
 

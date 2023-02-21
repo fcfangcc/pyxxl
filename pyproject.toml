@@ -34,12 +34,11 @@ mdx-include = "^1.4.2"
 pytest = "7.1.2"
 pytest-asyncio = "0.18.3"
 pre-commit = "2.19.0"
-black = "22.3.0"
-flake8 = "4.0.1"
-isort = "5.10.1"
 mypy = "0.942"
 pytest-aiohttp = "1.0.4"
 pytest-cov = "3.0.0"
+ruff = "^0.0.249"
+black = "23.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -51,20 +50,6 @@ build-backend = "poetry.core.masonry.api"
 name = "aliyun"
 url = "https://mirrors.aliyun.com/pypi/simple/"
 secondary = true
-
-[tool.black]
-line-length = 119
-target-version = ['py38']
-
-[tool.isort]
-profile="black"
-py_version = 38
-force_single_line=false
-combine_as_imports=true
-lines_between_types=1
-lines_after_imports=2
-src_paths=["pyxxl","example"]
-line_length = 119
 
 [tool.mypy]
 files = "pyxxl"
@@ -86,4 +71,27 @@ exclude_lines = [
     "raise NotImplementedError",
     "\\.\\.\\.",
     "if TYPE_CHECKING",
+]
+
+[tool.black]
+line-length = 119
+target-version = ['py38']
+
+[tool.ruff]
+line-length = 119
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "C",
+    "B",
+    "PGH"
+]
+exclude = [
+    "__init__.py"
+]
+
+ignore = [
+    "C408",  # Unnecessary `dict` call (rewrite as a literal)
 ]

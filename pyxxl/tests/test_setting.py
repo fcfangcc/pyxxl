@@ -5,7 +5,6 @@ import pytest
 from pyxxl.setting import ExecutorConfig
 from pyxxl.utils import get_network_ip
 
-
 TEST_ADMIN_URL = "http://localhost:8080/xxl-job-admin/api/"
 
 
@@ -14,8 +13,8 @@ def test_config():
         xxl_admin_baseurl=TEST_ADMIN_URL,
         executor_app_name="test",
     )
-    setting.executor_host == get_network_ip()
-    setting.executor_app_name == "test"
+    assert setting.executor_host == get_network_ip()
+    assert setting.executor_app_name == "test"
 
     # from env
     os.environ["executor_app_name"] = "fromenv"

@@ -1,5 +1,4 @@
 import time
-
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
@@ -10,7 +9,6 @@ from pyxxl.logger import DiskLog, LogBase, RedisLog
 from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI
 from pyxxl.types import LogRequest, LogResponse
 from pyxxl.utils import try_import
-
 
 if TYPE_CHECKING:
     import redis

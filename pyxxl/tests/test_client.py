@@ -1,5 +1,4 @@
 import pytest
-
 from aiohttp import web
 from pytest_aiohttp.plugin import AiohttpClient
 

@@ -1,11 +1,9 @@
 import asyncio
 import logging
-
 from abc import ABC, abstractmethod
 from typing import Any, AsyncContextManager, Optional
 
 from pyxxl.types import LogRequest, LogResponse
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +33,9 @@ class LogBase(ABC):
     def mock_logger(self, log_id: int) -> AsyncContextManager["LogBase"]:
         ...
 
-    async def expired_once(self) -> None:
+    async def expired_once(self) -> None:  # noqa: B027
         """执行一次批量过期操作,如果是redis啥的自带过期就无需实现此方法"""
-        ...
+        pass
 
     async def expired_loop(self, seconds: int = 3600) -> None:
         """

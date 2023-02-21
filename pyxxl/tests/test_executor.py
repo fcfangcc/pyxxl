@@ -8,7 +8,6 @@ from pyxxl.error import JobDuplicateError, JobNotFoundError, JobParamsError
 from pyxxl.executor import Executor, JobHandler
 from pyxxl.schema import RunData
 
-
 job_handler = JobHandler()
 
 

@@ -1,12 +1,10 @@
 import logging
-
 from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from pyxxl import error
 from pyxxl.schema import RunData
-
 
 if TYPE_CHECKING:
     from pyxxl.logger import LogBase

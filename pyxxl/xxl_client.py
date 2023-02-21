@@ -1,14 +1,11 @@
 import asyncio
 import logging
-
 from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
-
 from yarl import URL
 
 from pyxxl.error import ClientError, XXLRegisterError
-
 
 logger = logging.getLogger(__name__)
 

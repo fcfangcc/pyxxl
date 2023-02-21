@@ -1,4 +1,0 @@
-[flake8]
-max-line-length = 119
-exclude = .git,__pycache__,__init__.py,.mypy_cache,.pytest_cache,base.py,alembic
-extend-ignore = E203

@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import time
-
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Optional
@@ -14,7 +13,6 @@ from pyxxl.schema import HandlerInfo, RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
 from pyxxl.xxl_client import XXL
-
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +103,6 @@ class Executor:
                     logger.warning("job %s is  COVER_EARLY, logId %s replaced." % (run_data.jobId, run_data.logId))
                     await self._cancel(run_data.jobId)
                 elif run_data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
-
                     if len(self.queue[run_data.jobId]) >= self.config.task_queue_length:
                         msg = (
                             "job {job_id} is  SERIAL, queue length more than {max_length}."

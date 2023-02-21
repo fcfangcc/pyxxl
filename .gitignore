@@ -133,3 +133,4 @@ tables_xxl_job.sql
 .vscode/
 # docs
 docs/site
+.ruff_cache/

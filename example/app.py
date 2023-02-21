@@ -6,7 +6,6 @@ from pyxxl import ExecutorConfig, PyxxlRunner
 from pyxxl.ctx import g
 from pyxxl.utils import setup_logging
 
-
 setup_logging(logging.DEBUG)
 
 config = ExecutorConfig(

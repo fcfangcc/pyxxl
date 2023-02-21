@@ -1,6 +1,5 @@
 import logging
 import time
-
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional, Union
 
@@ -8,7 +7,6 @@ from pyxxl.types import LogRequest, LogResponse
 from pyxxl.utils import STD_FORMATTER, try_import
 
 from .common import MAX_LOG_TAIL_LINES, LogBase
-
 
 if TYPE_CHECKING:
     from logging import Handler

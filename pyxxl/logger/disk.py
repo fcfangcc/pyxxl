@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-
 from contextlib import asynccontextmanager
 from logging import FileHandler
 from pathlib import Path
@@ -13,7 +12,6 @@ from pyxxl.types import LogRequest, LogResponse
 from pyxxl.utils import STD_FORMATTER
 
 from .common import LogBase
-
 
 if TYPE_CHECKING:
     from logging import Handler
