@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
-from pyxxl.logger import DiskLog
+from pyxxl.logger import DiskLog, LogBase
 from pyxxl.schema import HandlerInfo, RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
@@ -55,6 +55,7 @@ class Executor:
         *,
         handler: Optional[JobHandler] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
+        logger_factory: Optional[LogBase] = None,
     ) -> None:
         """执行器，真正的调度任务和策略都在这里
 
@@ -77,7 +78,7 @@ class Executor:
             max_workers=self.config.max_workers,
             thread_name_prefix="pyxxl_pool",
         )
-        self.logger_factory = DiskLog(self.config.log_local_dir)
+        self.logger_factory = logger_factory or DiskLog(self.config.log_local_dir)
 
     async def shutdown(self) -> None:
         for _, task in self.tasks.items():
@@ -166,7 +167,6 @@ class Executor:
             g.logger.exception(err)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
         finally:
-            g.clear()
             await self._finish(data.jobId)
 
     async def _finish(self, job_id: int) -> None:

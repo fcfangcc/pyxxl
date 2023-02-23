@@ -1,13 +1,8 @@
 import asyncio
-import logging
 
 from fastapi import FastAPI
 
 from pyxxl import JobHandler
-from pyxxl.utils import setup_logging
-
-setup_logging(logging.DEBUG)
-
 
 app = FastAPI()
 xxl_handler = JobHandler()

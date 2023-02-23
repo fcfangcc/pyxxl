@@ -58,6 +58,7 @@ class ExecutorConfig:
 
     dotenv_path: Optional[str] = None
     """.env文件的路径,默认为当前路径下的.env文件."""
+    debug: bool = False
 
     def __post_init__(self) -> None:
         try:

@@ -9,6 +9,7 @@ from pyxxl.executor import Executor, JobHandler
 from pyxxl.logger import DiskLog, LogBase, RedisLog
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
+from pyxxl.utils import setup_logging
 from pyxxl.xxl_client import XXL
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,8 @@ class PyxxlRunner:
 
         self.handler = handler or JobHandler()
         self.config = config
+        if self.config.debug:
+            setup_logging(level=logging.DEBUG)
 
     async def _register_task(self, xxl_client: XXL) -> None:
         # todo: 这是个调度器的bug，必须循环去注册，不然会显示为离线
@@ -67,12 +70,13 @@ class PyxxlRunner:
         raise NotImplementedError
 
     async def _cleanup_ctx(self, app: web.Application) -> AsyncGenerator:
-        xxl_client = self._get_xxl_clint()
-        executor = Executor(xxl_client, config=self.config, handler=self.handler)
-        register_task = asyncio.create_task(self._register_task(xxl_client), name="register_task")
         # setup task log
         executor_log = self._get_log()
         executor_log_task = asyncio.create_task(executor_log.expired_loop(), name="log_task")
+
+        xxl_client = self._get_xxl_clint()
+        executor = Executor(xxl_client, config=self.config, handler=self.handler, logger_factory=executor_log)
+        register_task = asyncio.create_task(self._register_task(xxl_client), name="register_task")
 
         app["xxl_client"] = xxl_client
         app["executor"] = executor
