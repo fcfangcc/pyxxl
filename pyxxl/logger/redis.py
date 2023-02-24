@@ -95,7 +95,7 @@ class RedisLog(LogBase):
         to_line = request["fromLineNum"] - 1 + self.log_tail_lines
         llen = self.rclient.llen(key)
         if from_line >= llen:
-            logs = ""
+            logs = "No such logid logs." if llen == 0 else ""
             to_line_num = request["fromLineNum"]
         else:
             # lrange 0 20   [0, 20]

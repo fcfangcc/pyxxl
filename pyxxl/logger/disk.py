@@ -64,7 +64,7 @@ class DiskLog(LogBase):
                         logs += log
         except FileNotFoundError as e:
             logger.warning(str(e), exc_info=True)
-            logs = "No such log file or directory."
+            logs = "No such logid logs."
 
         return LogResponse(
             fromLineNum=request["fromLineNum"],

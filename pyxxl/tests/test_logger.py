@@ -80,6 +80,7 @@ async def test_read_file(get_log: Callable[..., LogBase], req, resp):
             marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
         ),
     ],
+    ids=["disk", "redis", "redis-pool"],
 )
 async def test_disk_logger(get_log: Callable[..., LogBase]):
     log = get_log()
@@ -93,6 +94,16 @@ async def test_disk_logger(get_log: Callable[..., LogBase]):
         read_data = await mock_log.read_task_logs(log_id)
         for b in ["test error", "test warning", "ERROR", "WARNING"]:
             assert b in read_data
+    # test file not found
+    assert (
+        "No such logid logs"
+        in (
+            await log.get_logs(
+                LogRequest(logDateTim=0, logId=0, fromLineNum=81),
+                key="xxxxxxxxxxxx.log",
+            )
+        )["logContent"]
+    )
 
 
 @pytest.mark.asyncio

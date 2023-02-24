@@ -42,7 +42,7 @@ class LogBase(ABC):
         Args:
             seconds (int, optional): one loop seconds. Defaults to 3600.
         """
-        logger.info("start expired_loop...")
+        logger.debug("start expired_loop...")
         while True:
             await self.expired_once()
             await asyncio.sleep(seconds)

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+import warnings
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Optional
@@ -30,7 +31,14 @@ class JobHandler:
             handler_name = name or func.__name__
             if handler_name in self._handlers and replace is False:
                 raise error.JobRegisterError("handler %s already registered." % handler_name)
-            self._handlers[handler_name] = HandlerInfo(handler=func)
+            handler = HandlerInfo(handler=func)
+            if not handler.is_async:
+                warnings.warn(
+                    "Using the sync method will unknown blocking exception, consider using async method.",
+                    SyntaxWarning,
+                    2,
+                )
+            self._handlers[handler_name] = handler
             logger.debug("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
 
             return func
@@ -163,6 +171,12 @@ class Executor:
         except asyncio.CancelledError as e:
             g.logger.warning(e, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg="CancelledError")
+        except asyncio.exceptions.TimeoutError as e:
+            # 同步任务run_in_executor超时会抛出TimeoutError异常
+            # 但是注意线程里面的任务仍然在允许，可能会占满所有的线程池
+            # todo: 杀死线程
+            g.logger.warning(e, exc_info=True)
+            await self.xxl_client.callback(data.logId, start_time, code=500, msg="TimeoutError")
         except Exception as err:  # pylint: disable=broad-except
             g.logger.exception(err)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
