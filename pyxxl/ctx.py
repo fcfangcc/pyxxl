@@ -1,4 +1,5 @@
 import logging
+import threading
 from contextvars import ContextVar
 from typing import Any, Optional
 
@@ -36,8 +37,13 @@ class GlobalVars:
     def logger(self) -> logging.Logger:  # pragma: no cover
         return self._get_var("task_logger")
 
-    def clear(self) -> None:
-        _global_vars.get().clear()
+    @staticmethod
+    def set_cancel_event(event: threading.Event) -> None:
+        GlobalVars._set_var("cancel_event", event)
+
+    @property
+    def cancel_event(self) -> threading.Event:  # pragma: no cover
+        return self._get_var("cancel_event")
 
 
 g = GlobalVars()

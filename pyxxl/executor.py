@@ -1,21 +1,50 @@
 import asyncio
 import logging
+import threading
 import time
 import warnings
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 
 from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
 from pyxxl.logger import DiskLog, LogBase
-from pyxxl.schema import HandlerInfo, RunData
+from pyxxl.schema import RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
 from pyxxl.xxl_client import XXL
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class HandlerInfo:
+    handler: Callable
+
+    def __str__(self) -> str:
+        return "<HandlerInfo {}>".format(self.handler.__name__)
+
+    @property
+    def is_async(self) -> bool:
+        return asyncio.iscoroutinefunction(self.handler)
+
+    async def start_async(self, timeout: int) -> Any:
+        assert self.is_async
+        return await asyncio.wait_for(self.handler(), timeout=timeout)
+
+    async def start_sync(self, loop: asyncio.AbstractEventLoop, pool: ThreadPoolExecutor, timeout: int) -> Any:
+        assert not self.is_async
+        event = threading.Event()
+        g.set_cancel_event(event)
+        try:
+            return await asyncio.wait_for(loop.run_in_executor(pool, self.handler), timeout=timeout)
+        except (asyncio.exceptions.TimeoutError, asyncio.CancelledError) as e:
+            event.set()
+            logger.debug("Get error for sync task {}".format(self))
+            raise e
 
 
 class JobHandler:
@@ -147,6 +176,7 @@ class Executor:
 
     async def cancel_job(self, job_id: int) -> None:
         async with self.lock:
+            logger.warning("start kill job: job_id={}".format(job_id))
             await self._cancel(job_id)
 
     async def is_running(self, job_id: int) -> bool:
@@ -157,15 +187,11 @@ class Executor:
         g.set_task_logger(self.logger_factory.get_logger(data.logId))
         try:
             g.logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
-            func = (
-                handler.handler()
-                if handler.is_async
-                else self.loop.run_in_executor(
-                    self.thread_pool,
-                    handler.handler,
-                )
-            )
-            result = await asyncio.wait_for(func, data.executorTimeout or self.config.task_timeout)
+            timeout = data.executorTimeout or self.config.task_timeout
+            if handler.is_async:
+                result = await handler.start_async(timeout)
+            else:
+                result = await handler.start_sync(self.loop, self.thread_pool, timeout)
             g.logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
         except asyncio.CancelledError as e:

@@ -1,15 +1,5 @@
-from asyncio import iscoroutinefunction
 from dataclasses import dataclass
-from typing import Callable, Optional
-
-
-@dataclass
-class HandlerInfo:
-    handler: Callable
-
-    @property
-    def is_async(self) -> bool:
-        return iscoroutinefunction(self.handler)
+from typing import Optional
 
 
 @dataclass(frozen=True)
