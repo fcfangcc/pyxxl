@@ -141,7 +141,7 @@ class Executor:
                         executorBlockStrategy=run_data.executorBlockStrategy,
                     )
 
-            start_time = int(time.time()) * 1000
+            start_time = int(time.time() * 1000)
             task = self.loop.create_task(self._run(handler_obj, start_time, run_data))
             self.tasks[run_data.jobId] = task
 
