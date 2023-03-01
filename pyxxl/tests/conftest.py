@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from typing import Any, Generator
 
 import pytest
@@ -57,12 +58,15 @@ def executor(request: Any) -> Executor:
 
 @pytest.fixture(scope="session")
 def web_app(executor: Executor) -> Application:
-
     runner = MokePyxxlRunner(executor.config)
 
     @runner.handler.register(name="demoJobHandler")
     async def test_task() -> None:
         await asyncio.sleep(60)
+
+    @runner.handler.register(name="demoJobHandlerSync")
+    def test_task_sync() -> None:
+        time.sleep(5)
 
     return runner.create_server_app()
 

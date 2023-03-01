@@ -5,45 +5,39 @@ from typing import Any, Optional
 
 from pyxxl.schema import RunData
 
-_global_vars: ContextVar[dict] = ContextVar("pyxxl_vars", default={})
-
 
 class GlobalVars:
-    @staticmethod
-    def _set_var(name: str, obj: Any) -> None:
-        _global_vars.get()[name] = obj
+    _DATA: ContextVar = ContextVar("_DATA")
+    _LOGGER: ContextVar = ContextVar("_LOGGER")
+    _EVENT: ContextVar = ContextVar("_EVENT")
 
-    @staticmethod
-    def _get_var(name: str) -> Any:
-        return _global_vars.get()[name]
+    @classmethod
+    def set_xxl_run_data(cls, data: RunData) -> None:
+        cls._DATA.set(data)
 
-    @staticmethod
-    def try_get(name: str) -> Optional[Any]:
-        return _global_vars.get().get(name)
-
-    @staticmethod
-    def set_xxl_run_data(data: RunData) -> None:
-        GlobalVars._set_var("xxl_kwargs", data)
+    @classmethod
+    def try_get_data(cls) -> Optional[Any]:
+        return cls._DATA.get(None)
 
     @property
     def xxl_run_data(self) -> RunData:
-        return self._get_var("xxl_kwargs")
+        return self._DATA.get()
 
-    @staticmethod
-    def set_task_logger(logger: logging.Logger) -> None:
-        GlobalVars._set_var("task_logger", logger)
+    @classmethod
+    def set_task_logger(cls, logger: logging.Logger) -> None:
+        cls._LOGGER.set(logger)
 
     @property
     def logger(self) -> logging.Logger:  # pragma: no cover
-        return self._get_var("task_logger")
+        return self._LOGGER.get()
 
-    @staticmethod
-    def set_cancel_event(event: threading.Event) -> None:
-        GlobalVars._set_var("cancel_event", event)
+    @classmethod
+    def set_cancel_event(cls, event: threading.Event) -> None:
+        cls._EVENT.set(event)
 
     @property
     def cancel_event(self) -> threading.Event:  # pragma: no cover
-        return self._get_var("cancel_event")
+        return self._EVENT.get()
 
 
 g = GlobalVars()

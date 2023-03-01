@@ -5,6 +5,7 @@ from aiohttp import web
 
 from pyxxl import error
 from pyxxl.schema import RunData
+from pyxxl.utils import try_import
 
 if TYPE_CHECKING:
     from pyxxl.logger import LogBase
@@ -96,4 +97,9 @@ def create_app() -> web.Application:
     """
     app = web.Application()
     app.add_routes(routes)
+    if try_import("prometheus_client"):
+        from pyxxl.prometheus import mount_app
+
+        mount_app(app)
+
     return app

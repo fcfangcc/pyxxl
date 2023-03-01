@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 from multiprocessing import Process
 from typing import AsyncGenerator, Optional
@@ -9,10 +10,19 @@ from pyxxl.executor import Executor, JobHandler
 from pyxxl.logger import DiskLog, LogBase, RedisLog
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
-from pyxxl.utils import setup_logging
+from pyxxl.utils import setup_logging, try_import
 from pyxxl.xxl_client import XXL
 
 logger = logging.getLogger(__name__)
+
+if try_import("prometheus_client"):
+    from pyxxl import prometheus
+
+    Executor: Executor = functools.partial(  # type: ignore[no-redef]
+        Executor,
+        successd_callback=prometheus.success,
+        failed_callback=prometheus.failed,
+    )
 
 
 class PyxxlRunner:

@@ -24,7 +24,7 @@ def _init_log_record_factory() -> None:
 
     def _record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
         record: Any = old_factory(*args, **kwargs)
-        xxl_kwargs = g.try_get("xxl_kwargs")
+        xxl_kwargs = g.try_get_data()
         record.logId = xxl_kwargs.logId if xxl_kwargs else "NotInTask"
         return record
 

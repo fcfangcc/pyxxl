@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import logging
 import threading
 import time
@@ -39,12 +40,26 @@ class HandlerInfo:
         assert not self.is_async
         event = threading.Event()
         g.set_cancel_event(event)
+        context = contextvars.copy_context()
         try:
-            return await asyncio.wait_for(loop.run_in_executor(pool, self.handler), timeout=timeout)
+            return await asyncio.wait_for(loop.run_in_executor(pool, context.run, self.handler), timeout=timeout)
         except (asyncio.exceptions.TimeoutError, asyncio.CancelledError) as e:
             event.set()
             logger.debug("Get error for sync task {}".format(self))
             raise e
+
+
+class XXLTask:
+    def __init__(self, task: asyncio.Task, data: RunData):
+        self.task = task
+        self.data = data
+
+    def __str__(self) -> str:
+        return "<XXLTask task={} data={}>".format(self.task, self.data)
+
+    @property
+    def cancel(self) -> Any:
+        return self.task.cancel
 
 
 class JobHandler:
@@ -93,6 +108,8 @@ class Executor:
         handler: Optional[JobHandler] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         logger_factory: Optional[LogBase] = None,
+        successd_callback: Optional[Callable] = None,
+        failed_callback: Optional[Callable] = None,
     ) -> None:
         """执行器，真正的调度任务和策略都在这里
 
@@ -108,7 +125,7 @@ class Executor:
 
         self.handler: JobHandler = handler or JobHandler()
         self.loop = loop or asyncio.get_event_loop()
-        self.tasks: Dict[int, asyncio.Task] = {}
+        self.tasks: Dict[int, XXLTask] = {}
         self.queue: Dict[int, List[RunData]] = defaultdict(list)
         self.lock = asyncio.Lock()
         self.thread_pool = ThreadPoolExecutor(
@@ -116,10 +133,12 @@ class Executor:
             thread_name_prefix="pyxxl_pool",
         )
         self.logger_factory = logger_factory or DiskLog(self.config.log_local_dir)
+        self.successd_callback = successd_callback or (lambda: 1)
+        self.failed_callback = failed_callback or (lambda x: 1)
 
     async def shutdown(self) -> None:
         for _, task in self.tasks.items():
-            task.cancel()
+            task.task.cancel()
 
     async def run_job(self, run_data: RunData) -> None:
         handler_obj = self.handler.get(run_data.executorHandler)
@@ -131,7 +150,7 @@ class Executor:
         async with self.lock:
             current_task = self.tasks.get(run_data.jobId)
             if current_task:
-                # 不用的阻塞策略
+                logger.warning("jobId {} is running. current_task={}".format(run_data.jobId, current_task))
                 # pylint: disable=no-else-raise
                 if run_data.executorBlockStrategy == executorBlockStrategy.DISCARD_LATER.value:
                     raise error.JobDuplicateError(
@@ -171,8 +190,10 @@ class Executor:
                     )
 
             start_time = int(time.time() * 1000)
-            task = self.loop.create_task(self._run(handler_obj, start_time, run_data))
-            self.tasks[run_data.jobId] = task
+            self.tasks[run_data.jobId] = XXLTask(
+                self.loop.create_task(self._run(handler_obj, start_time, run_data)),
+                run_data,
+            )
 
     async def cancel_job(self, job_id: int) -> None:
         async with self.lock:
@@ -194,23 +215,28 @@ class Executor:
                 result = await handler.start_sync(self.loop, self.thread_pool, timeout)
             g.logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
+            self.successd_callback()
         except asyncio.CancelledError as e:
             g.logger.warning(e, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg="CancelledError")
+            self.failed_callback("cancelled")
         except asyncio.exceptions.TimeoutError as e:
             # 同步任务run_in_executor超时会抛出TimeoutError异常
             # 但是注意线程里面的任务仍然在允许，可能会占满所有的线程池
             # todo: 杀死线程
             g.logger.warning(e, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg="TimeoutError")
+            self.failed_callback("timeout")
         except Exception as err:  # pylint: disable=broad-except
             g.logger.exception(err)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
+            self.failed_callback("exception")
         finally:
             await self._finish(data.jobId)
 
     async def _finish(self, job_id: int) -> None:
-        self.tasks.pop(job_id, None)
+        finish_task = self.tasks.pop(job_id, None)
+        logger.debug("finish task {}".format(finish_task))
         # 如果有队列中的任务，开始执行队列中的任务
         queue = self.queue[job_id]
         if queue:
@@ -223,7 +249,7 @@ class Executor:
         if task:
             task.cancel()
             try:
-                await task
+                await task.task
             except asyncio.CancelledError:
                 logger.warning("Job %s cancelled." % job_id)
 
@@ -232,7 +258,7 @@ class Executor:
 
         async def _graceful_close() -> None:
             while len(self.tasks) > 0:
-                await asyncio.wait(self.tasks.values())
+                await asyncio.wait([i.task for i in self.tasks.values()])
 
         await asyncio.wait_for(_graceful_close(), timeout=timeout)
 

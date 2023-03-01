@@ -3,15 +3,8 @@ import time
 import pytest
 from aiohttp.test_utils import TestClient
 
-# import logging
 
-# logger = logging.getLogger("pyxxl")
-# handler = logging.StreamHandler()
-# logger.addHandler(handler)
-# logger.setLevel(logging.DEBUG)
-
-
-async def _send_demoJobHandler(cli: TestClient, **kwargs):
+async def send_demoJobHandler(cli: TestClient, **kwargs):
     job_data = {
         "jobId": int(time.time() * 1000),
         "executorHandler": "demoJobHandler",
@@ -33,11 +26,11 @@ async def _send_demoJobHandler(cli: TestClient, **kwargs):
 
 @pytest.mark.asyncio
 async def test_run(cli: TestClient):
-    resp, _ = await _send_demoJobHandler(cli, executorBlockStrategy="DISCARD_LATER", jobId=100)
+    resp, _ = await send_demoJobHandler(cli, executorBlockStrategy="DISCARD_LATER", jobId=100)
     assert resp.status == 200
     assert await resp.json() == {"code": 200, "msg": None}
     # error
-    resp, _ = await _send_demoJobHandler(cli, executorBlockStrategy="DISCARD_LATER", jobId=100)
+    resp, _ = await send_demoJobHandler(cli, executorBlockStrategy="DISCARD_LATER", jobId=100)
     assert resp.status == 200
     response_dict = await resp.json()
     assert response_dict["code"] == 500
@@ -46,7 +39,7 @@ async def test_run(cli: TestClient):
 
 @pytest.mark.asyncio
 async def test_run_not_found(cli: TestClient):
-    resp, _ = await _send_demoJobHandler(cli, executorHandler="test_run_not_found")
+    resp, _ = await send_demoJobHandler(cli, executorHandler="test_run_not_found")
     assert resp.status == 200
     response_dict = await resp.json()
     assert response_dict["code"] == 500
@@ -66,8 +59,8 @@ async def test_idle_beat(cli: TestClient):
     assert resp.status == 200
     assert await resp.json() == {"code": 200, "msg": None}
 
-    resp, jobId = await _send_demoJobHandler(cli, jobId=300)
-    resp, jobId = await _send_demoJobHandler(cli, jobId=300)
+    resp, jobId = await send_demoJobHandler(cli, jobId=300)
+    resp, jobId = await send_demoJobHandler(cli, jobId=300)
     resp = await cli.post("/idleBeat", json={"jobId": jobId})
     response_data = await resp.json()
     assert response_data["code"] == 500
@@ -76,14 +69,14 @@ async def test_idle_beat(cli: TestClient):
 
 @pytest.mark.asyncio
 async def test_kill(cli: TestClient):
-    resp, jobId = await _send_demoJobHandler(cli)
+    resp, jobId = await send_demoJobHandler(cli)
     resp = await cli.post("/kill", json={"jobId": jobId})
     assert await resp.json() == {"code": 200, "msg": None}
 
 
 @pytest.mark.asyncio
 async def test_log(cli: TestClient):
-    resp, jobId = await _send_demoJobHandler(cli)
+    resp, jobId = await send_demoJobHandler(cli)
     resp = await cli.post(
         "/log",
         json={
