@@ -990,6 +990,21 @@ toml = "*"
 virtualenv = ">=20.0.8"
 
 [[package]]
+name = "prometheus-client"
+version = "0.16.0"
+description = "Python client for the Prometheus monitoring system."
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "prometheus_client-0.16.0-py3-none-any.whl", hash = "sha256:0836af6eb2c8f4fed712b2f279f6c0a8bbab29f9f4aa15276b91c7cb0d1616ab"},
+    {file = "prometheus_client-0.16.0.tar.gz", hash = "sha256:a03e35b359f14dd1630898543e2120addfdeacd1a6069c1367ae90fd93ad3f48"},
+]
+
+[package.extras]
+twisted = ["twisted"]
+
+[[package]]
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
@@ -1615,11 +1630,12 @@ docs = ["jaraco.packaging (>=9)", "rst.linker (>=1.9)", "sphinx"]
 testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.0.1)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["redis", "python-dotenv"]
+all = ["redis", "python-dotenv", "prometheus-client"]
 dotenv = ["python-dotenv"]
+metrics = ["prometheus-client"]
 redis = ["redis"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "1b0195b1dabd488b64163cf8448750a8471715ba7b019746c20e1537c2df6098"
+content-hash = "d637e63bd4cde0890e7701e41bf97fb7c7d02c53596aad9d2579c2cf5ce8a25a"

@@ -5,6 +5,7 @@ from aiohttp import web
 
 from pyxxl import error
 from pyxxl.schema import RunData
+from pyxxl.utils import try_import
 
 if TYPE_CHECKING:
     from pyxxl.logger import LogBase
@@ -50,7 +51,7 @@ async def run(request: web.Request) -> web.Response:
     """
     data = await request.json()
     run_data = RunData(**data)
-    logger.debug("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
+    logger.info("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
     try:
         await request.app["executor"].run_job(run_data)
     except error.JobDuplicateError as e:
@@ -96,4 +97,9 @@ def create_app() -> web.Application:
     """
     app = web.Application()
     app.add_routes(routes)
+    if try_import("prometheus_client"):
+        from pyxxl.prometheus import mount_app
+
+        mount_app(app)
+
     return app

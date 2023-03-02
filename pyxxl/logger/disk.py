@@ -23,6 +23,25 @@ MAX_LOG_TAIL_LINES = 1000
 logger = logging.getLogger(__name__)
 
 
+class XXLogger:
+    """为了可以关闭文件写入流"""
+
+    def __init__(self, logger: logging.Logger) -> None:
+        self._logger = logger
+
+    def __del__(self) -> None:
+        # !!! StreamHandler remove会有问题，需要判断是否是FileHandler
+        for h in self._logger.handlers:
+            if isinstance(h, logging.FileHandler):
+                logger.debug("close file log object: {}.".format(h))
+                h.close()
+                self._logger.removeHandler(h)
+
+    def __getattr__(self, name: str) -> Any:
+        if name in ["info", "error", "warning", "debug", "exception", "handlers"]:
+            return getattr(self._logger, name)
+
+
 class DiskLog(LogBase):
     def __init__(self, log_path: str, log_tail_lines: int = 0, expired_days: int = 14) -> None:
         self.log_path = Path(log_path)
@@ -35,8 +54,11 @@ class DiskLog(LogBase):
     def key(self, log_id: int) -> str:
         return self.log_path.joinpath(LOG_NAME_PREFIX.format(log_id=log_id)).absolute().as_posix()
 
-    def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger:
+    def get_logger(  # type:ignore[override]
+        self, log_id: int, *, stdout: bool = True, level: int = logging.INFO
+    ) -> XXLogger:
         logger = logging.getLogger("pyxxl-task-{%s}" % log_id)
+        logger.propagate = False
         logger.setLevel(level)
         handlers: list[Handler] = [logging.StreamHandler()] if stdout else []
         handlers.append(FileHandler(self.key(log_id), delay=True))
@@ -44,7 +66,7 @@ class DiskLog(LogBase):
             h.setFormatter(STD_FORMATTER)
             h.setLevel(level)
             logger.addHandler(h)
-        return logger
+        return XXLogger(logger)
 
     async def get_logs(self, request: LogRequest, *, key: str = None) -> LogResponse:
         # todo: 优化获取中间行的逻辑，缓存之前每行日志的大小然后直接seek

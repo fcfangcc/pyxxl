@@ -35,6 +35,8 @@ class ExecutorConfig:
     """执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址. Default: 获取到第一个网卡的ip地址"""
     executor_port: int = 9999
     """执行器绑定的http服务的端口,作用同host. Default: 9999"""
+    executor_log_path: str = "pyxxl.log"
+    """执行器日志输出的路径(注意路径必须存在). Default: pyxxl.log"""
 
     max_workers: int = 30
     """执行器线程池（执行同步任务时使用）. Default: 30"""
