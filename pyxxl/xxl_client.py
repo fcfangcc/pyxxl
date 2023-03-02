@@ -95,7 +95,9 @@ class XXL:
                         return r
                     raise XXLRegisterError(await response.text())
             except aiohttp.ClientConnectionError as e:
-                logger.error(f"Connection error {times} times: {str(e)}, retry afert {self.retry_interval}")
+                logger.error(
+                    "Connection error {} times: {}, retry afert {}".format(times, str(e), self.retry_interval)
+                )
                 await asyncio.sleep(self.retry_interval)
                 times += 1
         raise ClientError("Connection error, retry times {}".format(times))

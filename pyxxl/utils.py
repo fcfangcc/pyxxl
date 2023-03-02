@@ -1,6 +1,7 @@
 import importlib
 import logging
 import socket
+from logging.handlers import RotatingFileHandler
 from typing import Any, List, Optional
 
 from pyxxl.ctx import g
@@ -11,6 +12,8 @@ DEFAULT_FORMAT = (
 )
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 STD_FORMATTER = logging.Formatter(DEFAULT_FORMAT, datefmt=DATE_FORMAT)
+DEFAULT_FILE_SIZE = 50 * 1024 * 1024
+DEFAULT_BACKUP_FILE_COUNT = 5
 
 
 def get_network_ip() -> str:
@@ -32,6 +35,7 @@ def _init_log_record_factory() -> None:
 
 
 def setup_logging(
+    path: str,
     level: int = logging.INFO,
     custom_handlers: Optional[List[logging.Handler]] = None,
     std_formatter: Optional[logging.Formatter] = None,
@@ -42,16 +46,17 @@ def setup_logging(
     logger = logging.getLogger("pyxxl")
     logger.setLevel(level)
 
-    handler = logging.StreamHandler()
-    handler.setFormatter(std_formatter)
-    handler.setLevel(level)
-    logger.addHandler(handler)
-
+    handlers: List[logging.Handler] = [
+        logging.StreamHandler(),
+        RotatingFileHandler(path, maxBytes=DEFAULT_FILE_SIZE, backupCount=DEFAULT_BACKUP_FILE_COUNT, delay=True),
+    ]
     if custom_handlers:
-        for h in custom_handlers:
-            h.setFormatter(std_formatter)
-            h.setLevel(level)
-            logger.addHandler(h)
+        handlers.extend(custom_handlers)
+
+    for h in handlers:
+        h.setFormatter(std_formatter)
+        h.setLevel(level)
+        logger.addHandler(h)
     return logger
 
 

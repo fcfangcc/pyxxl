@@ -54,8 +54,8 @@ class PyxxlRunner:
 
         self.handler = handler or JobHandler()
         self.config = config
-        if self.config.debug:
-            setup_logging(level=logging.DEBUG)
+        log_level = logging.DEBUG if self.config.debug else logging.INFO
+        setup_logging(self.config.executor_log_path, level=log_level)
 
     async def _register_task(self, xxl_client: XXL) -> None:
         # todo: 这是个调度器的bug，必须循环去注册，不然会显示为离线

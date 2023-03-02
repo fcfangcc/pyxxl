@@ -51,7 +51,7 @@ async def run(request: web.Request) -> web.Response:
     """
     data = await request.json()
     run_data = RunData(**data)
-    logger.debug("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
+    logger.info("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
     try:
         await request.app["executor"].run_job(run_data)
     except error.JobDuplicateError as e:

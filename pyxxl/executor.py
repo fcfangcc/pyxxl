@@ -236,7 +236,7 @@ class Executor:
 
     async def _finish(self, job_id: int) -> None:
         finish_task = self.tasks.pop(job_id, None)
-        logger.debug("finish task {}".format(finish_task))
+        logger.info("Finish task {}".format(finish_task))
         # 如果有队列中的任务，开始执行队列中的任务
         queue = self.queue[job_id]
         if queue:

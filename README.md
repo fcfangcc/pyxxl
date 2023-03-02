@@ -16,7 +16,7 @@
 
 实现原理：通过XXL-JOB提供的RESTful API接口进行对接
 
-<font color="#dd0000">注意！！！如果用同步的方法，极端情况下会卡住主线程。如果无法全异步编程的，谨慎使用本仓库。</font>
+<font color="#dd0000">注意！！！如果用同步的方法，请查看下面同步任务注意事项。</font>
 
 ## 已经支持的功能
 
@@ -84,6 +84,33 @@ pip install pyxxl[metrics]
 安装metrics扩展后，执行器会自动加载prometheus的指标监控功能
 
 访问地址为: http://executor_host:port/metrics
+
+## 同步任务注意事项
+同步任务会放到线程池中运行，无法正确接受cancel信号和timeout配置
+
+如果需要使用同步任务并且无法控制（预料）里面执行时间，又需要进行超时和cancel功能的，需要接受pyxxl发出的cancel_event，当该cancel_event被设置时需要中断任务，下面是一个案例:
+
+```python
+...
+
+@app.handler.register(name="sync_func")
+def sync_loop_demo():
+    # 如果同步任务里面有循环，为了支持cancel操作，必须每次都判断g.cancel_event.
+    task_params_list = []
+    while not g.cancel_event.is_set() and task_parasm_list:
+        params = task_params_list.pop()
+        time.sleep(3)
+    return "ok"
+
+# 如下代码会造成线程池里的线程被永远占用，timeout cancel全部不生效
+@app.handler.register(name="sync_func2")
+def sync_loop_demo2():
+    while True:
+        time.sleep(3) # 模拟你运行的任务
+    return "ok"
+
+```
+
 
 ## 开发人员
 下面是开发人员如何快捷的搭建开发调试环境

@@ -134,3 +134,4 @@ tables_xxl_job.sql
 # docs
 docs/site
 .ruff_cache/
+logs/

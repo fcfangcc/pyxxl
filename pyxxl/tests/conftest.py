@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from typing import Any, Generator
 
@@ -11,9 +10,6 @@ from pytest_aiohttp.plugin import AiohttpClient, TestClient
 from pyxxl import ExecutorConfig
 from pyxxl.executor import Executor
 from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI, MokePyxxlRunner, MokeXXL
-from pyxxl.utils import setup_logging
-
-setup_logging(logging.INFO, custom_handlers=[logging.FileHandler("./testlogs.log")])
 
 GLOBAL_JOB_ID = 1
 GLOBAL_CONFIG: Any = dict(
@@ -62,7 +58,7 @@ def web_app(executor: Executor) -> Application:
 
     @runner.handler.register(name="demoJobHandler")
     async def test_task() -> None:
-        await asyncio.sleep(60)
+        await asyncio.sleep(20)
 
     @runner.handler.register(name="demoJobHandlerSync")
     def test_task_sync() -> None:
