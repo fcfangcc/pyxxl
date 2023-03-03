@@ -108,7 +108,7 @@ class Executor:
         handler: Optional[JobHandler] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         logger_factory: Optional[LogBase] = None,
-        successd_callback: Optional[Callable] = None,
+        successed_callback: Optional[Callable] = None,
         failed_callback: Optional[Callable] = None,
     ) -> None:
         """执行器，真正的调度任务和策略都在这里
@@ -133,7 +133,7 @@ class Executor:
             thread_name_prefix="pyxxl_pool",
         )
         self.logger_factory = logger_factory or DiskLog(self.config.log_local_dir)
-        self.successd_callback = successd_callback or (lambda: 1)
+        self.successed_callback = successed_callback or (lambda: 1)
         self.failed_callback = failed_callback or (lambda x: 1)
 
     async def shutdown(self) -> None:
@@ -215,7 +215,7 @@ class Executor:
                 result = await handler.start_sync(self.loop, self.thread_pool, timeout)
             g.logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
-            self.successd_callback()
+            self.successed_callback()
         except asyncio.CancelledError as e:
             g.logger.warning(e, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg="CancelledError")

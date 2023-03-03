@@ -28,7 +28,7 @@ class XXL:
         admin_url: str,
         token: Optional[str] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
-        retry_times: int = 0,
+        retry_times: int = 1,
         retry_interval: int = 5,
         session: Optional[aiohttp.ClientSession] = None,
         **kwargs: Any,
@@ -58,16 +58,15 @@ class XXL:
     async def registry(self, key: str, value: str) -> bool:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
         try:
-            await self._post("registry", payload, retry_times=1)
-            # logger.debug("Registry successful. %s" % payload)
+            await self._post("registry", payload, retry_times=5)
             return True
-        except XXLRegisterError as e:
+        except (XXLRegisterError, ClientError) as e:
             logger.error("Registry executor failed. %s", e.message)
         return False
 
     async def registryRemove(self, key: str, value: str) -> None:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
-        await self._post("registryRemove", payload)
+        await self._post("registryRemove", payload, retry_times=3)
         logger.info("RegistryRemove successful. %s" % payload)
 
     async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: str = None) -> None:
@@ -83,9 +82,9 @@ class XXL:
         logger.debug("Callback successful. %s" % payload)
 
     async def _post(self, path: str, payload: JsonType, retry_times: Optional[int] = None) -> Response:
-        times = 1
+        times = 0
         retry_times = retry_times or self.retry_times
-        while times <= retry_times or retry_times == 0:
+        while times < retry_times:
             try:
                 async with self.session.post(self.url_path + path, json=payload, headers=self.headers) as response:
                     if response.status == 200:
@@ -95,12 +94,13 @@ class XXL:
                         return r
                     raise XXLRegisterError(await response.text())
             except aiohttp.ClientConnectionError as e:
-                logger.error(
-                    "Connection error {} times: {}, retry afert {}".format(times, str(e), self.retry_interval)
+                times += 1
+                logger.warning(
+                    "Connection error {} times, retry after {}. {}".format(times, self.retry_interval, str(e))
                 )
                 await asyncio.sleep(self.retry_interval)
-                times += 1
-        raise ClientError("Connection error, retry times {}".format(times))
+
+        raise ClientError("Connection error after retry times {}".format(times))
 
     async def close(self) -> None:
         await self.session.close()

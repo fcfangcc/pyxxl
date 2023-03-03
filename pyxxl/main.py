@@ -20,7 +20,7 @@ if try_import("prometheus_client"):
 
     Executor: Executor = functools.partial(  # type: ignore[no-redef]
         Executor,
-        successd_callback=prometheus.success,
+        successed_callback=prometheus.success,
         failed_callback=prometheus.failed,
     )
 
@@ -60,9 +60,12 @@ class PyxxlRunner:
     async def _register_task(self, xxl_client: XXL) -> None:
         # todo: 这是个调度器的bug，必须循环去注册，不然会显示为离线
         # https://github.com/xuxueli/xxl-job/issues/2090
-        while True:
-            await xxl_client.registry(self.config.executor_app_name, self.config.executor_baseurl)
-            await asyncio.sleep(10)
+        try:
+            while True:
+                await xxl_client.registry(self.config.executor_app_name, self.config.executor_baseurl)
+                await asyncio.sleep(10)
+        finally:
+            logger.warning("Register task is exit.")
 
     def _get_xxl_clint(self) -> XXL:
         """for moke"""
@@ -120,7 +123,7 @@ class PyxxlRunner:
         web.run_app(
             self.create_server_app(),
             port=self.config.executor_port,
-            host=self.config.executor_host,
+            host=self.config.executor_server_host,
             handle_signals=handle_signals,
         )
 

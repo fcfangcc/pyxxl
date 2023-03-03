@@ -37,6 +37,14 @@ class ExecutorConfig:
     """执行器绑定的http服务的端口,作用同host. Default: 9999"""
     executor_log_path: str = "pyxxl.log"
     """执行器日志输出的路径(注意路径必须存在). Default: pyxxl.log"""
+    executor_server_host: str = ""
+    """
+    执行器HTTP服务绑定的HOST,大部分情况下不需要设置. Default: executor_host
+
+    当执行器通过了端口转发暴露给admin的时候,需要把executor_host填写为直连admin的地址.
+    然后executor_server_host需要配置为0.0.0.0或者转发设备能访问的地址,不然会出现服务启动失败的情况
+
+    """
 
     max_workers: int = 30
     """执行器线程池（执行同步任务时使用）. Default: 30"""
@@ -79,6 +87,8 @@ class ExecutorConfig:
         self._valid_xxl_admin_baseurl()
         self._valid_executor_app_name()
         self._valid_logger_target()
+        if not self.executor_server_host:
+            self.executor_server_host = self.executor_host
 
     def _valid_xxl_admin_baseurl(self) -> None:
         _admin_url: URL = URL(self.xxl_admin_baseurl)
