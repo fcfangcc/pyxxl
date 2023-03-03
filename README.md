@@ -38,11 +38,11 @@
 ```shell
 pip install pyxxl
 # 如果日志需要写入redis
-pip install pyxxl[redis]
+pip install "pyxxl[redis]"
 # 如果需要从.env加载配置
-pip install pyxxl[dotenv]
+pip install "pyxxl[dotenv]"
 # 安装所有功能
-pip install pyxxl[all]
+pip install "pyxxl[all]"
 ```
 
 ```python
@@ -78,7 +78,7 @@ app.run_executor()
 ## 监控指标
 
 ```shell
-pip install pyxxl[metrics]
+pip install "pyxxl[metrics]"
 ```
 
 安装metrics扩展后，执行器会自动加载prometheus的指标监控功能
