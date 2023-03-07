@@ -97,7 +97,7 @@ async def test_runner_cancel(executor: Executor, handler_name: str, job_id: int)
     assert executor.xxl_client.callback_result.get(cancel_job_id) == 500
     assert executor.xxl_client.callback_result.get(ok_job_id) == 200
     # include_queue =True
-    base_data = base_data | {"jobId": job_id}
+    base_data.update({"jobId": job_id})
     executor.xxl_client.clear_result()
     cancel_log_id = job_id
     queue_log_id = job_id + 1

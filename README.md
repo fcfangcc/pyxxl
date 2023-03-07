@@ -132,3 +132,7 @@ poetry install --all-extras
 # 修改app.py中相关的配置信息,然后启动
 poetry run python example/app.py
 ```
+
+## TODO
+
+* 由于种种3.9之后才加入的语法与特性，减少开发与适配成本，计划后续版本不再适配Python3.9以下版本

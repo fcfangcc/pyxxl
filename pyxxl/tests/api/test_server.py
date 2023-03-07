@@ -28,7 +28,7 @@ async def send_demoJobHandler(cli: TestClient, **kwargs):
 async def test_run(cli: TestClient):
     resp, _ = await send_demoJobHandler(cli, executorBlockStrategy="DISCARD_LATER", jobId=100)
     assert resp.status == 200
-    assert await resp.json() == {"code": 200, "msg": None}
+    assert await resp.json() == {"code": 200, "msg": "Running"}
     # error
     resp, _ = await send_demoJobHandler(cli, executorBlockStrategy="DISCARD_LATER", jobId=100)
     assert resp.status == 200
