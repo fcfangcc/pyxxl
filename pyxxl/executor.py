@@ -7,7 +7,7 @@ import warnings
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, MutableSet, Optional
 
 from pyxxl import error
 from pyxxl.ctx import g
@@ -19,6 +19,13 @@ from pyxxl.types import DecoratedCallable
 from pyxxl.xxl_client import XXL
 
 logger = logging.getLogger(__name__)
+# https://docs.python.org/3.10/library/asyncio-task.html#asyncio.create_task
+_BACKGROUND_TASKS: MutableSet[asyncio.Task] = set()
+
+
+def spawn_task(task: asyncio.Task) -> None:
+    _BACKGROUND_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_TASKS.discard)
 
 
 @dataclass
@@ -126,7 +133,9 @@ class Executor:
         self.handler: JobHandler = handler or JobHandler()
         self.loop = loop or asyncio.get_event_loop()
         self.tasks: Dict[int, XXLTask] = {}
-        self.queue: Dict[int, List[RunData]] = defaultdict(list)
+        self.queue: Dict[int, asyncio.Queue[RunData]] = defaultdict(
+            lambda: asyncio.Queue(maxsize=self.config.task_queue_length)
+        )
         self.lock = asyncio.Lock()
         self.thread_pool = ThreadPoolExecutor(
             max_workers=self.config.max_workers,
@@ -136,76 +145,81 @@ class Executor:
         self.successed_callback = successed_callback or (lambda: 1)
         self.failed_callback = failed_callback or (lambda x: 1)
 
-    async def shutdown(self) -> None:
-        for _, task in self.tasks.items():
-            task.task.cancel()
-
-    async def run_job(self, run_data: RunData) -> None:
-        handler_obj = self.handler.get(run_data.executorHandler)
+    async def run_job(self, data: RunData) -> str:
+        handler_obj = self.handler.get(data.executorHandler)
         if not handler_obj:
-            logger.warning("handler %s not found." % run_data.executorHandler)
-            raise error.JobNotFoundError("handler %s not found." % run_data.executorHandler)
+            logger.warning("handler %s not found." % data.executorHandler)
+            raise error.JobNotFoundError("handler %s not found." % data.executorHandler)
 
         # 一个执行器同时只能执行一个jobId相同的任务
         async with self.lock:
-            current_task = self.tasks.get(run_data.jobId)
-            if current_task:
-                logger.warning("jobId {} is running. current_task={}".format(run_data.jobId, current_task))
-                # pylint: disable=no-else-raise
-                if run_data.executorBlockStrategy == executorBlockStrategy.DISCARD_LATER.value:
-                    raise error.JobDuplicateError(
-                        "The same job [%s] is already executing and this has been discarded." % run_data.jobId
+            current_task = self.tasks.get(data.jobId)
+            if not current_task and self.get_queue(data.jobId).empty():
+                self.tasks[data.jobId] = XXLTask(self.loop.create_task(self._run(data)), data)
+                return "Running"
+
+            logger.warning("jobId {} is running. current_task={}".format(data.jobId, current_task))
+            # pylint: disable=no-else-raise
+            if data.executorBlockStrategy == executorBlockStrategy.DISCARD_LATER.value:
+                raise error.JobDuplicateError(
+                    "The same job [%s] is already executing and this has been discarded." % data
+                )
+            elif data.executorBlockStrategy == executorBlockStrategy.COVER_EARLY.value:
+                msg = "Job {} BlockStrategy is COVER_EARLY, logId {} replaced.".format(data.jobId, data.logId)
+                logger.warning(msg)
+                spawn_task(asyncio.create_task(self.cancel_job(data.jobId, include_queue=False)))
+                await self.get_queue(data.jobId).put(data)
+                return msg
+            elif data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
+                queue = self.get_queue(data.jobId)
+                if queue.full():
+                    msg = "Job {job_id} is  SERIAL, queue length more than {maxsize}." "Job {job}  discard!".format(
+                        job_id=data.jobId, job=data, maxsize=queue.maxsize
                     )
-                elif run_data.executorBlockStrategy == executorBlockStrategy.COVER_EARLY.value:
-                    logger.warning("job %s is  COVER_EARLY, logId %s replaced." % (run_data.jobId, run_data.logId))
-                    await self._cancel(run_data.jobId)
-                elif run_data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
-                    if len(self.queue[run_data.jobId]) >= self.config.task_queue_length:
-                        msg = (
-                            "job {job_id} is  SERIAL, queue length more than {max_length}."
-                            "logId {log_id}  discard!".format(
-                                job_id=run_data.jobId,
-                                log_id=run_data.logId,
-                                max_length=self.config.task_queue_length,
-                            )
-                        )
-                        logger.error(msg)
-                        raise error.JobDuplicateError(msg)
-                    else:
-                        queue = self.queue[run_data.jobId]
-                        logger.info(
-                            "job {job_id} is in queen, logId {log_id} ranked {ranked}th [max={max_length}]...".format(
-                                job_id=run_data.jobId,
-                                log_id=run_data.logId,
-                                ranked=len(queue) + 1,
-                                max_length=self.config.task_queue_length,
-                            )
-                        )
-                        queue.append(run_data)
-                        return
+                    logger.error(msg)
+                    raise error.JobDuplicateError(msg)
                 else:
-                    raise error.JobParamsError(
-                        "unknown executorBlockStrategy [%s]." % run_data.executorBlockStrategy,
-                        executorBlockStrategy=run_data.executorBlockStrategy,
+                    msg = "job {job_id} is in queen, logId {log_id} ranked {ranked}th [max={maxsize}]...".format(
+                        job_id=data.jobId, log_id=data.logId, ranked=queue.qsize() + 1, maxsize=queue.maxsize
                     )
+                    logger.info(msg)
+                    await queue.put(data)
+                    return msg
+            else:
+                raise error.JobParamsError(
+                    "unknown executorBlockStrategy [%s]." % data.executorBlockStrategy,
+                    executorBlockStrategy=data.executorBlockStrategy,
+                )
 
-            start_time = int(time.time() * 1000)
-            self.tasks[run_data.jobId] = XXLTask(
-                self.loop.create_task(self._run(handler_obj, start_time, run_data)),
-                run_data,
-            )
+    async def cancel_job(self, job_id: int, include_queue: bool = True) -> None:
+        logger.warning("start kill job: job_id={}".format(job_id))
+        await asyncio.sleep(0.01)  # sleep for pytest
 
-    async def cancel_job(self, job_id: int) -> None:
         async with self.lock:
-            logger.warning("start kill job: job_id={}".format(job_id))
-            await self._cancel(job_id)
+            if include_queue:
+                queue = self.get_queue(job_id)
+                while not queue.empty():
+                    data = queue.get_nowait()
+                    logger.warning("Discard jobId {} from queue,data: {}".format(job_id, data))
+
+            task = self.tasks.get(job_id, None)
+            if task:
+                # https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel
+                task.cancel()
+                try:
+                    await task.task
+                except asyncio.CancelledError:
+                    logger.warning("Job %s cancelled." % job_id)
 
     async def is_running(self, job_id: int) -> bool:
         return job_id in self.tasks
 
-    async def _run(self, handler: HandlerInfo, start_time: int, data: RunData) -> None:
+    async def _run(self, data: RunData) -> None:
+        handler = self.handler.get(data.executorHandler)
+        assert handler
         g.set_xxl_run_data(data)
         g.set_task_logger(self.logger_factory.get_logger(data.logId))
+        start_time = int(time.time() * 1000)
         try:
             g.logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
             timeout = data.executorTimeout or self.config.task_timeout
@@ -217,48 +231,55 @@ class Executor:
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
             self.successed_callback()
         except asyncio.CancelledError as e:
-            g.logger.warning(e, exc_info=True)
+            g.logger.info(e, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg="CancelledError")
             self.failed_callback("cancelled")
         except asyncio.exceptions.TimeoutError as e:
             # 同步任务run_in_executor超时会抛出TimeoutError异常
-            # 但是注意线程里面的任务仍然在允许，可能会占满所有的线程池
-            # todo: 杀死线程
+            # !!! 但是注意线程里面的任务仍然在运行，可能会占满所有的线程池
             g.logger.warning(e, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg="TimeoutError")
             self.failed_callback("timeout")
         except Exception as err:  # pylint: disable=broad-except
-            g.logger.exception(err)
+            g.logger.exception(err, exc_info=True)
             await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
             self.failed_callback("exception")
         finally:
-            await self._finish(data.jobId)
+            if self.lock.locked():
+                await self._finish(data.jobId)
+            else:
+                async with self.lock:
+                    await self._finish(data.jobId)
 
     async def _finish(self, job_id: int) -> None:
+        # 所有移除tasks的操作全部在这里执行
         finish_task = self.tasks.pop(job_id, None)
         logger.info("Finish task {}".format(finish_task))
-        # 如果有队列中的任务，开始执行队列中的任务
-        queue = self.queue[job_id]
-        if queue:
-            kwargs: RunData = queue.pop(0)
-            logger.info("JobId %s in queue[%s], start job with logId %s" % (kwargs.jobId, len(queue), kwargs.logId))
-            await self.run_job(kwargs)
+        queue = self.get_queue(job_id)
+        if not queue.empty():
+            data = queue.get_nowait()
+            logger.info(
+                "Get data from queue jobId={}, after queueSize={}, data={}".format(job_id, queue.qsize(), data)
+            )
+            self.tasks[job_id] = XXLTask(self.loop.create_task(self._run(data)), data)
+            queue.task_done()
 
-    async def _cancel(self, job_id: int) -> None:
-        task = self.tasks.pop(job_id, None)
-        if task:
-            task.cancel()
-            try:
-                await task.task
-            except asyncio.CancelledError:
-                logger.warning("Job %s cancelled." % job_id)
+    async def shutdown(self) -> None:
+        await asyncio.sleep(0.01)  # sleep for pytest
+
+        async with self.lock:
+            self.queue.clear()
+            for _, task in self.tasks.items():
+                task.task.cancel()
 
     async def graceful_close(self, timeout: int = 60) -> None:
         """优雅关闭"""
+        await asyncio.sleep(0.01)  # sleep for pytest
 
         async def _graceful_close() -> None:
-            while len(self.tasks) > 0:
+            while len(self.tasks) > 0 or any(i.qsize() > 0 for i in self.queue.values()):
                 await asyncio.wait([i.task for i in self.tasks.values()])
+                await asyncio.sleep(0.05)
 
         await asyncio.wait_for(_graceful_close(), timeout=timeout)
 
@@ -268,3 +289,6 @@ class Executor:
     @property
     def register(self) -> Any:
         return self.handler.register
+
+    def get_queue(self, job_id: int) -> asyncio.Queue[RunData]:
+        return self.queue[job_id]

@@ -52,20 +52,21 @@ async def run(request: web.Request) -> web.Response:
     data = await request.json()
     run_data = RunData(**data)
     logger.info("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
+    msg = None
     try:
-        await request.app["executor"].run_job(run_data)
+        msg = await request.app["executor"].run_job(run_data)
     except error.JobDuplicateError as e:
         return web.json_response(dict(code=500, msg=e.message))
     except error.JobNotFoundError as e:
         return web.json_response(dict(code=500, msg=e.message))
 
-    return web.json_response(dict(code=200, msg=None))
+    return web.json_response(dict(code=200, msg=msg))
 
 
 @routes.post("/kill")
 async def kill(request: web.Request) -> web.Response:
     data = await request.json()
-    await request.app["executor"].cancel_job(data["jobId"])
+    await request.app["executor"].cancel_job(data["jobId"], include_queue=True)
     return web.json_response(dict(code=200, msg=None))
 
 

@@ -40,10 +40,14 @@ def setup_logging(
     custom_handlers: Optional[List[logging.Handler]] = None,
     std_formatter: Optional[logging.Formatter] = None,
 ) -> logging.Logger:
+    logger = logging.getLogger("pyxxl")
+    if logger.handlers:
+        return logger
+
     std_formatter = std_formatter or STD_FORMATTER
 
     _init_log_record_factory()
-    logger = logging.getLogger("pyxxl")
+
     logger.setLevel(level)
 
     handlers: List[logging.Handler] = [

@@ -13,13 +13,13 @@ job_handler = JobHandler()
 
 @job_handler.register
 async def pytest_executor_async():
-    await asyncio.sleep(3)
+    await asyncio.sleep(2)
     return "成功30"
 
 
 @job_handler.register
 def pytest_executor_sync():
-    time.sleep(3)
+    time.sleep(2)
     return "成功30"
 
 
@@ -82,33 +82,31 @@ async def test_runner_callback(executor: Executor, handler_name: str):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("handler_name", HANDLER_NAMES)
-async def test_runner_cancel(executor: Executor, handler_name: str):
+async def test_runner_cancel(executor: Executor, handler_name: str, job_id: int):
     executor.reset_handler(job_handler)
     cancel_job_id, ok_job_id = 1100, 1200
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=cancel_job_id,
-                jobId=cancel_job_id,
-                executorHandler=handler_name,
-                executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
-            )
-        )
+    base_data = dict(
+        executorHandler=handler_name,
+        executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
     )
-    await executor.run_job(
-        RunData(
-            **dict(
-                logId=ok_job_id,
-                jobId=ok_job_id,
-                executorHandler=handler_name,
-                executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
-            )
-        )
-    )
-    await executor.cancel_job(cancel_job_id)
+    await executor.run_job(RunData(logId=cancel_job_id, jobId=cancel_job_id, **base_data))
+    await executor.run_job(RunData(logId=ok_job_id, jobId=ok_job_id, **base_data))
+
+    await executor.cancel_job(cancel_job_id, include_queue=False)
     await executor.graceful_close()
-    assert executor.xxl_client.callback_result.get(cancel_job_id) is None
+    assert executor.xxl_client.callback_result.get(cancel_job_id) == 500
     assert executor.xxl_client.callback_result.get(ok_job_id) == 200
+    # include_queue =True
+    base_data = base_data | {"jobId": job_id}
+    executor.xxl_client.clear_result()
+    cancel_log_id = job_id
+    queue_log_id = job_id + 1
+    await executor.run_job(RunData(logId=cancel_log_id, **base_data))
+    await executor.run_job(RunData(logId=queue_log_id, **base_data))
+    await executor.cancel_job(job_id, include_queue=True)
+    await executor.graceful_close()
+    assert executor.xxl_client.callback_result.get(cancel_log_id) == 500
+    assert executor.xxl_client.callback_result.get(queue_log_id) is None
 
 
 @pytest.mark.asyncio
@@ -124,20 +122,19 @@ async def test_runner_SERIAL_EXECUTION(executor: Executor, job_id: int, handler_
     await executor.run_job(RunData(logId=11, **run_data))
     await executor.run_job(RunData(logId=12, **run_data))
     await executor.run_job(RunData(logId=13, **run_data))
-    assert len(executor.queue.get(job_id)) == 2
+    assert executor.queue.get(job_id).qsize() == 2
     await executor.graceful_close()
-    assert len(executor.queue.get(job_id)) == 0
+    assert executor.queue.get(job_id).qsize() == 0
     assert executor.xxl_client.callback_result.get(13) == 200
 
     # max_queue_length
-    executor.config.task_queue_length = 2
-    await executor.run_job(RunData(logId=11, **run_data))
-    await executor.run_job(RunData(logId=12, **run_data))
-    await executor.run_job(RunData(logId=13, **run_data))
+    for i in range(executor.config.task_queue_length + 1):
+        await executor.run_job(RunData(logId=100 + i, **run_data))
+
     with pytest.raises(JobDuplicateError, match="discard"):
-        await executor.run_job(RunData(logId=14, **run_data))
-    #
-    executor.config.task_queue_length = 30
+        await executor.run_job(RunData(logId=101 + i, **run_data))
+
+    await executor.shutdown()
 
 
 @pytest.mark.asyncio
@@ -172,7 +169,7 @@ async def test_runner_COVER_EARLY(executor: Executor, job_id: int, handler_name:
     await executor.run_job(RunData(logId=41, **run_data))
     await executor.graceful_close()
     assert executor.xxl_client.callback_result.get(41) == 200
-    assert executor.xxl_client.callback_result.get(40) is None
+    assert executor.xxl_client.callback_result.get(40) == 500
 
 
 @pytest.mark.asyncio

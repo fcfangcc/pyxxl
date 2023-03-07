@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, is_dataclass
 from typing import Any
@@ -61,10 +62,12 @@ async def metrics(request: web.Request) -> web.Response:
     for k, v in executor.tasks.items():
         RUNNING_TASK_INFO.labels(k).info(as_str_dict(v.data))
 
-    for kk, vv in executor.queue.items():
-        QUEUE_TASKS.labels(kk).set(len(vv))
-        info = as_str_dict({str(idx): as_str_dict(vv[idx]) for idx in range(len(vv))})
-        QUEUE_TASKS_INFO.labels(kk).info(info)
+    for kk, queue in copy.deepcopy(executor.queue).items():
+        QUEUE_TASKS.labels(kk).set(queue.qsize())
+        info = []
+        while not queue.empty():
+            info.append(as_str_dict(queue.get_nowait()))
+        QUEUE_TASKS_INFO.labels(kk).info({"queue_detail": str(info)})
     # thread pool
     THREAD_POOL_INFO.info(_get_thread_pool_info(executor.thread_pool))
 
