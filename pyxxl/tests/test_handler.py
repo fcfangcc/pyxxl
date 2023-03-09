@@ -19,7 +19,7 @@ async def test_async_timeout():
 
     handler = HandlerInfo(handler=_handler)
     with pytest.raises(asyncio.TimeoutError):
-        await handler.start_async(2)
+        await handler.start(2)
 
     await asyncio.sleep(1)
     now_r_num = len(r)
@@ -29,7 +29,7 @@ async def test_async_timeout():
 
 @pytest.mark.asyncio
 async def test_sync_timeout_ok(event_loop):
-    thread_pool = ThreadPoolExecutor(max_workers=10)
+    ThreadPoolExecutor(max_workers=10)
     r = []
 
     def _handler():
@@ -39,7 +39,7 @@ async def test_sync_timeout_ok(event_loop):
 
     handler = HandlerInfo(handler=_handler)
     with pytest.raises(asyncio.TimeoutError):
-        await handler.start_sync(event_loop, thread_pool, 2)
+        await handler.start(2)
 
     await asyncio.sleep(1)
     now_r_num = len(r)
@@ -49,8 +49,6 @@ async def test_sync_timeout_ok(event_loop):
 
 @pytest.mark.asyncio
 async def test_sync_timeout_error(event_loop):
-    thread_pool = ThreadPoolExecutor(max_workers=10)
-
     r = []
 
     def _handler():
@@ -60,10 +58,9 @@ async def test_sync_timeout_error(event_loop):
 
     handler = HandlerInfo(handler=_handler)
     with pytest.raises(asyncio.TimeoutError):
-        await handler.start_sync(event_loop, thread_pool, 2)
+        await handler.start(2)
 
     await asyncio.sleep(1)
     now_r_num = len(r)
     await asyncio.sleep(2)
     assert len(r) > now_r_num
-    thread_pool.shutdown(False)

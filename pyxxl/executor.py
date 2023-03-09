@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextvars
 import logging
 import threading
 import time
@@ -33,25 +32,23 @@ def spawn_task(task: asyncio.Task) -> None:
 @dataclass
 class HandlerInfo:
     handler: Callable
+    is_async: bool = False
 
     def __str__(self) -> str:
         return "<HandlerInfo {}>".format(self.handler.__name__)
 
-    @property
-    def is_async(self) -> bool:
-        return asyncio.iscoroutinefunction(self.handler)
+    def __post_init__(self) -> None:
+        self.is_async = asyncio.iscoroutinefunction(self.handler)
 
-    async def start_async(self, timeout: int) -> Any:
-        assert self.is_async
-        return await asyncio.wait_for(self.handler(), timeout=timeout)
-
-    async def start_sync(self, loop: asyncio.AbstractEventLoop, pool: ThreadPoolExecutor, timeout: int) -> Any:
-        assert not self.is_async
+    async def start(self, timeout: int) -> Any:
+        if self.is_async:
+            return await asyncio.wait_for(self.handler(), timeout=timeout)
+        # https://stackoverflow.com/questions/71416383/python-asyncio-cancelling-a-to-thread-task-wont-stop-the-thread
+        # 由于线程无法直接取消，这里发送一个event，供开发者自己接收信号来判断是否需要取消
         event = threading.Event()
         g.set_cancel_event(event)
-        context = contextvars.copy_context()
         try:
-            return await asyncio.wait_for(loop.run_in_executor(pool, context.run, self.handler), timeout=timeout)
+            return await asyncio.wait_for(asyncio.to_thread(self.handler), timeout=timeout)
         except (asyncio.exceptions.TimeoutError, asyncio.CancelledError) as e:
             event.set()
             logger.debug("Get error for sync task {}".format(self))
@@ -146,6 +143,7 @@ class Executor:
         self.logger_factory = logger_factory or DiskLog(self.config.log_local_dir)
         self.successed_callback = successed_callback or (lambda: 1)
         self.failed_callback = failed_callback or (lambda x: 1)
+        self.loop.set_default_executor(self.thread_pool)
 
     async def run_job(self, data: RunData) -> str:
         handler_obj = self.handler.get(data.executorHandler)
@@ -169,7 +167,7 @@ class Executor:
             elif data.executorBlockStrategy == executorBlockStrategy.COVER_EARLY.value:
                 msg = "Job {} BlockStrategy is COVER_EARLY, logId {} replaced.".format(data.jobId, data.logId)
                 logger.warning(msg)
-                spawn_task(asyncio.create_task(self.cancel_job(data.jobId, include_queue=False)))
+                spawn_task(self.loop.create_task(self.cancel_job(data.jobId, include_queue=False)))
                 await self.get_queue(data.jobId).put(data)
                 return msg
             elif data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
@@ -225,10 +223,7 @@ class Executor:
         try:
             g.logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
             timeout = data.executorTimeout or self.config.task_timeout
-            if handler.is_async:
-                result = await handler.start_async(timeout)
-            else:
-                result = await handler.start_sync(self.loop, self.thread_pool, timeout)
+            result = await handler.start(timeout)
             g.logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
             await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
             self.successed_callback()
