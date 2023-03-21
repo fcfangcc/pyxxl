@@ -133,6 +133,6 @@ poetry install --all-extras
 poetry run python example/app.py
 ```
 
-## TODO
+## 其他
 
-* 由于种种3.9之后才加入的语法与特性，减少开发与适配成本，计划后续版本不再适配Python3.9以下版本
+* 由于种种3.9之后才加入的语法与特性，减少开发与适配成本，计划后续版本不再适配Python3.9以下版本，0.3.0最后一个支持Python3.8的版本

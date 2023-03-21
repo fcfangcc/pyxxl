@@ -1,104 +1,100 @@
 [tool.poetry]
-name = "pyxxl"
-version = "0.3.0"
-readme = "README.md"
-license = "GPL-3.0-only"
-description = "A Python executor for XXL-jobs"
 authors = ["fcfangcc <swjfc22@live.com>"]
-repository = "https://github.com/fcfangcc/pyxxl"
-keywords = ["XXL"]
 classifiers = [
-    "Topic :: Software Development :: Libraries :: Python Modules"
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-
+description = "A Python executor for XXL-jobs"
+keywords = ["XXL"]
+license = "GPL-3.0-only"
+name = "pyxxl"
+readme = "README.md"
+repository = "https://github.com/fcfangcc/pyxxl"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-aiohttp = "^3.8.1"
 aiofiles = "^22.1.0"
-redis = { version = "^4.4.0", optional = true }
-python-dotenv = { version = "*", optional = true }
-prometheus-client = { version = "*", optional = true }
+aiohttp = "^3.8.1"
+prometheus-client = {version = "*", optional = true}
+python = "^3.9"
+python-dotenv = {version = "*", optional = true}
+redis = {version = "^4.4.0", optional = true}
 
 [tool.poetry.extras]
-redis = ["redis"]
+all = ["redis", "python-dotenv", "prometheus-client"]
 dotenv = ["python-dotenv"]
 metrics = ["prometheus-client"]
-all = ["redis", "python-dotenv","prometheus-client"]
+redis = ["redis"]
 
 [tool.poetry.group.doc.dependencies]
-mkdocs = "^1.4.2"
-mkdocstrings = { version = "^0.20.0", extras = ["python"] }
-mkdocs-material = "^9.0.9"
 mdx-include = "^1.4.2"
+mkdocs = "^1.4.2"
+mkdocs-material = "^9.0.9"
+mkdocstrings = {version = "^0.20.0", extras = ["python"]}
 
 [tool.poetry.group.dev.dependencies]
-pytest = "7.1.2"
-pytest-asyncio = "0.18.3"
-pre-commit = "2.19.0"
+black = "23.1.0"
 mypy = "0.942"
+pre-commit = "2.19.0"
+pytest = "7.1.2"
 pytest-aiohttp = "1.0.4"
+pytest-asyncio = "0.18.3"
 pytest-cov = "3.0.0"
 ruff = "^0.0.249"
-black = "23.1.0"
-
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
 
 # if your need
 # https://python-poetry.org/docs/repositories/#install-dependencies-from-a-private-repository
 [[tool.poetry.source]]
 name = "aliyun"
-url = "https://mirrors.aliyun.com/pypi/simple/"
 secondary = true
+url = "https://mirrors.aliyun.com/pypi/simple/"
 
 [tool.mypy]
-files = "pyxxl"
-ignore_missing_imports = true
 disallow_untyped_defs = true
 exclude = [
-    '^pyxxl/tests/test_.*\.py$',
-    '^pyxxl/tests/api/test_.*\.py$',
+  '^pyxxl/tests/test_.*\.py$',
+  '^pyxxl/tests/api/test_.*\.py$',
 ]
-
+files = "pyxxl"
+ignore_missing_imports = true
 
 [tool.coverage.run]
 concurrency = ["thread"]
 
 [tool.coverage.report]
 exclude_lines = [
-    "pragma: no cover",
-    "if __name__ == .__main__.",
-    "raise NotImplementedError",
-    "\\.\\.\\.",
-    "if TYPE_CHECKING",
+  "pragma: no cover",
+  "if __name__ == .__main__.",
+  "raise NotImplementedError",
+  "\\.\\.\\.",
+  "if TYPE_CHECKING",
 ]
 
 [tool.black]
 line-length = 119
-target-version = ['py38']
+target-version = ['py39']
 
 [tool.ruff]
+exclude = [
+  "__init__.py",
+]
 line-length = 119
 select = [
-    "E",
-    "W",
-    "F",
-    "I",
-    "C",
-    "B",
-    "PGH"
-]
-exclude = [
-    "__init__.py"
+  "E",
+  "W",
+  "F",
+  "I",
+  "C",
+  "B",
+  "PGH",
 ]
 
 ignore = [
-    "C408",  # Unnecessary `dict` call (rewrite as a literal)
+  "C408", # Unnecessary `dict` call (rewrite as a literal)
 ]
-
 
 [tool.pytest.ini_options]
 addopts = "--asyncio-mode auto"
