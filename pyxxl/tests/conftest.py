@@ -52,7 +52,6 @@ def event_loop() -> Generator:
     ids=["disk", "redis"],
 )
 def executor(request: Any) -> Executor:
-    print(type(request))
     return Executor(MokeXXL("http://localhost:8080/xxl-job-admin/api/"), request.param, handler=None)
 
 
@@ -62,7 +61,7 @@ def web_app(executor: Executor) -> Application:
 
     @runner.handler.register(name="demoJobHandler")
     async def test_task() -> None:
-        await asyncio.sleep(20)
+        await asyncio.sleep(10)
 
     @runner.handler.register(name="demoJobHandlerSync")
     def test_task_sync() -> None:

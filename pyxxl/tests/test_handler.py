@@ -1,6 +1,5 @@
 import asyncio
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -29,7 +28,6 @@ async def test_async_timeout():
 
 @pytest.mark.asyncio
 async def test_sync_timeout_ok(event_loop):
-    ThreadPoolExecutor(max_workers=10)
     r = []
 
     def _handler():

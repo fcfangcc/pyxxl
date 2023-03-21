@@ -82,7 +82,11 @@ class ExecutorConfig:
             env_val = os.getenv(param.name) or os.getenv(param.name.upper())
             if env_val is not None:
                 logger.debug("Get [%s] config from env: [%s]" % (param.name, env_val))
-                setattr(self, param.name, env_val)
+                if param.annotation is bool:
+                    real_value = env_val in ["true", "True"]
+                else:
+                    real_value = param.annotation(env_val)
+                setattr(self, param.name, real_value)
 
         self._valid_xxl_admin_baseurl()
         self._valid_executor_app_name()

@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import weakref
 from contextlib import asynccontextmanager
 from logging import FileHandler
 from pathlib import Path
@@ -23,19 +24,29 @@ MAX_LOG_TAIL_LINES = 1000
 logger = logging.getLogger(__name__)
 
 
+def _close_file_stream(_logger: logging.Logger) -> None:
+    # !!! StreamHandler remove会有问题，需要判断是否是FileHandler
+    for h in _logger.handlers:
+        if isinstance(h, logging.FileHandler):
+            logger.debug("close file log object: {}.".format(h))
+            h.close()
+            _logger.removeHandler(h)
+
+
 class XXLogger:
     """为了可以关闭文件写入流"""
 
     def __init__(self, logger: logging.Logger) -> None:
         self._logger = logger
 
-    def __del__(self) -> None:
-        # !!! StreamHandler remove会有问题，需要判断是否是FileHandler
-        for h in self._logger.handlers:
-            if isinstance(h, logging.FileHandler):
-                logger.debug("close file log object: {}.".format(h))
-                h.close()
-                self._logger.removeHandler(h)
+        self._finalizer = weakref.finalize(self, _close_file_stream, self._logger)
+
+    def remove(self) -> None:
+        self._finalizer()
+
+    @property
+    def removed(self) -> bool:
+        return not self._finalizer.alive
 
     def __getattr__(self, name: str) -> Any:
         if name in ["info", "error", "warning", "debug", "exception", "handlers"]:

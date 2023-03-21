@@ -19,10 +19,14 @@ def test_config():
     # from env
     os.environ["executor_app_name"] = "fromenv"
     os.environ["XXL_ADMIN_BASEURL"] = TEST_ADMIN_URL
+    os.environ["GRACEFUL_TIMEOUT"] = "500"
+    os.environ["GRACEFUL_CLOSE"] = "False"
 
     setting = ExecutorConfig(xxl_admin_baseurl="", executor_app_name="")
-    setting.executor_app_name = "fromenv"
-    setting.xxl_admin_baseurl = TEST_ADMIN_URL
+    assert setting.executor_app_name == "fromenv"
+    assert setting.xxl_admin_baseurl == TEST_ADMIN_URL
+    assert setting.graceful_timeout == 500
+    assert setting.graceful_close is False
     os.environ.clear()
 
 
