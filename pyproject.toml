@@ -49,8 +49,13 @@ requires = ["poetry-core>=1.0.0"]
 # https://python-poetry.org/docs/repositories/#install-dependencies-from-a-private-repository
 [[tool.poetry.source]]
 name = "aliyun"
-secondary = true
 url = "https://mirrors.aliyun.com/pypi/simple/"
+priority = "primary"
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
 
 [tool.mypy]
 disallow_untyped_defs = true

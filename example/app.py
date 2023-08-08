@@ -13,7 +13,7 @@ config = ExecutorConfig(
 app = PyxxlRunner(config)
 
 
-@app.handler.register(name="demoJobHandler")
+@app.register(name="demoJobHandler")
 async def test_task():
     # you can get task params with "g"
     g.logger.info("get executor params: %s" % g.xxl_run_data.executorParams)
@@ -23,13 +23,13 @@ async def test_task():
     return "成功..."
 
 
-@app.handler.register(name="xxxxx")
+@app.register(name="xxxxx")
 async def test_task3():
     await asyncio.sleep(3)
     return "成功3"
 
 
-@app.handler.register(name="sync_func")
+@app.register(name="sync_func")
 def test_task4():
     # 如果要在xxl-admin上看到执行日志，打印日志的时候务必用g.logger来打印，默认只打印info及以上的日志
     n = 1

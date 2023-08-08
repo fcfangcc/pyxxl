@@ -59,11 +59,11 @@ def executor(request: Any) -> Executor:
 def web_app(executor: Executor) -> Application:
     runner = MokePyxxlRunner(executor.config)
 
-    @runner.handler.register(name="demoJobHandler")
+    @runner.register(name="demoJobHandler")
     async def test_task() -> None:
         await asyncio.sleep(10)
 
-    @runner.handler.register(name="demoJobHandlerSync")
+    @runner.register(name="demoJobHandlerSync")
     def test_task_sync() -> None:
         time.sleep(5)
 

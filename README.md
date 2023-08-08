@@ -58,13 +58,13 @@ config = ExecutorConfig(
 
 app = PyxxlRunner(config)
 
-@app.handler.register(name="demoJobHandler")
+@app.register(name="demoJobHandler")
 async def test_task():
     await asyncio.sleep(5)
     return "成功..."
 
 # 如果你代码里面没有实现全异步，请使用同步函数，不然会阻塞其他任务
-@app.handler.register(name="xxxxx")
+@app.register(name="xxxxx")
 def test_task3():
     return "成功3"
 
@@ -93,7 +93,7 @@ pip install "pyxxl[metrics]"
 ```python
 ...
 
-@app.handler.register(name="sync_func")
+@app.register(name="sync_func")
 def sync_loop_demo():
     # 如果同步任务里面有循环，为了支持cancel操作，必须每次都判断g.cancel_event.
     task_params_list = []
@@ -103,7 +103,7 @@ def sync_loop_demo():
     return "ok"
 
 # 如下代码会造成线程池里的线程被永远占用，timeout cancel全部不生效
-@app.handler.register(name="sync_func2")
+@app.register(name="sync_func2")
 def sync_loop_demo2():
     while True:
         time.sleep(3) # 模拟你运行的任务

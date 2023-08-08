@@ -283,9 +283,5 @@ class Executor:
     def reset_handler(self, handler: Optional[JobHandler] = None) -> None:
         self.handler = handler or JobHandler()
 
-    @property
-    def register(self) -> Any:
-        return self.handler.register
-
     def get_queue(self, job_id: int) -> asyncio.Queue[RunData]:
         return self.queue[job_id]

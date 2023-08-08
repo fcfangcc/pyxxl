@@ -24,14 +24,14 @@ async def test_hander_error(executor: Executor):
 async def test_hander(executor: Executor):
     executor.reset_handler()
 
-    @executor.register
+    @executor.handler.register
     def test_hander1():
         ...
 
-    @executor.register(replace=True)
+    @executor.handler.register(replace=True)
     async def test_hander1():  # noqa: F811
         ...
 
-    @executor.register(name="test_hander1_dup")
+    @executor.handler.register(name="test_hander1_dup")
     def test_hander1():  # noqa: F811
         ...

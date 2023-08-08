@@ -2,7 +2,7 @@ import asyncio
 import functools
 import logging
 from multiprocessing import Process
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 from aiohttp import web
 
@@ -48,7 +48,7 @@ class PyxxlRunner:
             )
             ```
         Args:
-            config (ExecutorConfig): 配置参数 [ExecutorConfig](/apis/config)
+            config (ExecutorConfig): 配置参数
             handler (JobHandler, optional): 执行器支持的job,没有预先定义的job名称也会执行失败
         """
 
@@ -136,6 +136,10 @@ class PyxxlRunner:
         daemon = Process(target=self._runner, name="pyxxljob", daemon=True)
         daemon.start()
         self.daemon = daemon
+
+    @property
+    def register(self) -> Any:
+        return self.handler.register
 
     # def exit_daemon(self):
     #     logger.info("Exit daemon name=%s", self.daemon.name )
