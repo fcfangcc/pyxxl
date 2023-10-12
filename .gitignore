@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 
-tables_xxl_job.sql
+tables_xxl_job*.sql
 .vscode/
 # docs
 docs/site

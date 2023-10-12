@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 import aiohttp
 from yarl import URL
 
-from pyxxl.error import ClientError, XXLRegisterError
+from pyxxl.error import XXLClientError, XXLRegisterError
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class XXL:
         try:
             await self._post("registry", payload, retry_times=5)
             return True
-        except (XXLRegisterError, ClientError) as e:
+        except (XXLRegisterError, XXLClientError) as e:
             logger.error("Registry executor failed. %s", e.message)
         return False
 
@@ -70,18 +70,21 @@ class XXL:
         logger.info("RegistryRemove successful. %s" % payload)
 
     async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: str = None) -> None:
+        # executeResult兼容xxl-job2.2版本
         payload = [
             {
                 "logId": log_id,
                 "logDateTim": timestamp,
                 "handleCode": code,
                 "handleMsg": msg,
+                "executeResult": {"code": code, "msg": msg},
             }
         ]
         await self._post("callback", payload)
         logger.debug("Callback successful. %s" % payload)
 
     async def _post(self, path: str, payload: JsonType, retry_times: Optional[int] = None) -> Response:
+        logger.debug("post to xxl-job path={} payload={}".format(path, payload))
         times = 0
         retry_times = retry_times or self.retry_times
         while times < retry_times:
@@ -90,9 +93,9 @@ class XXL:
                     if response.status == 200:
                         r = Response(**(await response.json()))
                         if not r.ok:
-                            raise XXLRegisterError(r.msg or "")
+                            raise XXLClientError(r.msg or "")
                         return r
-                    raise XXLRegisterError(await response.text())
+                    raise XXLClientError(await response.text())
             except aiohttp.ClientConnectionError as e:
                 times += 1
                 logger.warning(
@@ -100,7 +103,7 @@ class XXL:
                 )
                 await asyncio.sleep(self.retry_interval)
 
-        raise ClientError("Connection error after retry times {}".format(times))
+        raise XXLClientError("Connection error after retry times {}".format(times))
 
     async def close(self) -> None:
         await self.session.close()
