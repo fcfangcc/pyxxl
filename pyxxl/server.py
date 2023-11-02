@@ -91,11 +91,6 @@ async def log(request: web.Request) -> web.Response:
 
 
 def create_app() -> web.Application:
-    """
-    xxl_admin_baseurl xxl调度中心的接口地址，如http://localhost:8080/xxl-job-admin/api/
-    executor_names 执行器名称列表
-    executor_baseurl 执行器http接口的地址 如http://172.17.0.1:9999
-    """
     app = web.Application()
     app.add_routes(routes)
     if try_import("prometheus_client"):

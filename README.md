@@ -75,6 +75,8 @@ app.run_executor()
 
 更多示例和接口文档请参考 [PYXXL文档](https://fcfangcc.github.io/pyxxl/example/) ，具体代码在example文件夹下面
 
+如果executor服务无法直连xxl-admin，请参考[PYXXL配置](https://fcfangcc.github.io/pyxxl/apis/config/)修改executor_listen_host
+
 ## 监控指标
 
 ```shell
@@ -83,7 +85,7 @@ pip install "pyxxl[metrics]"
 
 安装metrics扩展后，执行器会自动加载prometheus的指标监控功能
 
-访问地址为: http://executor_host:port/metrics
+访问地址为: http://executor_listen_host:executor_listen_port/metrics
 
 ## 同步任务注意事项
 同步任务会放到线程池中运行，无法正确接受cancel信号和timeout配置

@@ -40,11 +40,12 @@ def _init_log_record_factory() -> None:
 
 def setup_logging(
     path: str,
+    name: str,
     level: int = logging.INFO,
     custom_handlers: Optional[List[logging.Handler]] = None,
     std_formatter: Optional[logging.Formatter] = None,
 ) -> logging.Logger:
-    logger = logging.getLogger("pyxxl")
+    logger = logging.getLogger(name)
     if logger.handlers:
         return logger
 
@@ -53,6 +54,7 @@ def setup_logging(
     _init_log_record_factory()
 
     logger.setLevel(level)
+    logger.propagate = False
 
     handlers: List[logging.Handler] = [
         logging.StreamHandler(),

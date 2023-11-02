@@ -10,9 +10,6 @@ from pytest_aiohttp.plugin import AiohttpClient, TestClient
 from pyxxl import ExecutorConfig
 from pyxxl.executor import Executor
 from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI, MokePyxxlRunner, MokeXXL
-from pyxxl.utils import setup_logging
-
-setup_logging("./logs/pytest.log")
 
 GLOBAL_JOB_ID = 1
 GLOBAL_CONFIG: Any = dict(
@@ -21,6 +18,7 @@ GLOBAL_CONFIG: Any = dict(
     executor_host="127.0.0.1",
     graceful_close=False,
     task_queue_length=5,
+    dotenv_try=False,
 )
 
 xxl_admin_baseurl = "http://localhost:8080/xxl-job-admin/api/"
