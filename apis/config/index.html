@@ -349,8 +349,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pyxxl.setting.ExecutorConfig.executor_baseurl" class="md-nav__link">
+    executor_baseurl
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pyxxl.setting.ExecutorConfig.executor_host" class="md-nav__link">
     executor_host
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyxxl.setting.ExecutorConfig.executor_listen_host" class="md-nav__link">
+    executor_listen_host
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyxxl.setting.ExecutorConfig.executor_listen_port" class="md-nav__link">
+    executor_listen_port
   </a>
   
 </li>
@@ -365,13 +386,6 @@
         <li class="md-nav__item">
   <a href="#pyxxl.setting.ExecutorConfig.executor_port" class="md-nav__link">
     executor_port
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.setting.ExecutorConfig.executor_server_host" class="md-nav__link">
-    executor_server_host
   </a>
   
 </li>
@@ -559,8 +573,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pyxxl.setting.ExecutorConfig.executor_baseurl" class="md-nav__link">
+    executor_baseurl
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pyxxl.setting.ExecutorConfig.executor_host" class="md-nav__link">
     executor_host
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyxxl.setting.ExecutorConfig.executor_listen_host" class="md-nav__link">
+    executor_listen_host
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pyxxl.setting.ExecutorConfig.executor_listen_port" class="md-nav__link">
+    executor_listen_port
   </a>
   
 </li>
@@ -575,13 +610,6 @@
         <li class="md-nav__item">
   <a href="#pyxxl.setting.ExecutorConfig.executor_port" class="md-nav__link">
     executor_port
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pyxxl.setting.ExecutorConfig.executor_server_host" class="md-nav__link">
-    executor_server_host
   </a>
   
 </li>
@@ -770,6 +798,27 @@
 
 
 
+<h2 id="pyxxl.setting.ExecutorConfig.executor_baseurl" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">executor_baseurl</span><span class="p">:</span> <span class="nb">str</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>暴露给xxl-admin的地址</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h2 id="pyxxl.setting.ExecutorConfig.executor_host" class="doc doc-heading">
 <code class="highlight language-python"><span class="n">executor_host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">get_network_ip</span><span class="p">)</span></code>
   
@@ -783,6 +832,56 @@
   <div class="doc doc-contents ">
   
       <p>执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址. Default: 获取到第一个网卡的ip地址</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pyxxl.setting.ExecutorConfig.executor_listen_host" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">executor_listen_host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>执行器HTTP服务绑定的HOST,大部分情况下不需要设置. Default: executor_host</p>
+<p>当执行器通过了端口转发暴露给admin的时候,需要把executor_host填写为直连admin的地址.</p>
+<p>列如调用路径为 xxl-admin -&gt; nginx_ip_or_domain:80 -&gt; executor:9999
+这个时候需要配置为</p>
+<div class="highlight"><pre><span></span><code>executor_port=80
+executor_host=nginx_ip_or_domain
+executor_listen_port=9999
+executor_listen_host=&quot;0.0.0.0&quot;
+</code></pre></div>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pyxxl.setting.ExecutorConfig.executor_listen_port" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">executor_listen_port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Default: executor_port</p>
   </div>
 
 </div>
@@ -825,29 +924,6 @@
   <div class="doc doc-contents ">
   
       <p>执行器绑定的http服务的端口,作用同host. Default: 9999</p>
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="pyxxl.setting.ExecutorConfig.executor_server_host" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">executor_server_host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span></code>
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-  </span>
-
-</h2>
-
-
-  <div class="doc doc-contents ">
-  
-      <p>执行器HTTP服务绑定的HOST,大部分情况下不需要设置. Default: executor_host</p>
-<p>当执行器通过了端口转发暴露给admin的时候,需要把executor_host填写为直连admin的地址.
-然后executor_server_host需要配置为0.0.0.0或者转发设备能访问的地址,不然会出现服务启动失败的情况</p>
   </div>
 
 </div>
