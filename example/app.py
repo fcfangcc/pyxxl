@@ -4,10 +4,13 @@ import time
 from pyxxl import ExecutorConfig, PyxxlRunner
 from pyxxl.ctx import g
 
+# 如果xxl-admin可以直连executor的ip，可以不填写executor_listen_host
 config = ExecutorConfig(
     xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
     executor_app_name="xxl-job-executor-sample",
-    executor_host="172.17.0.1",
+    executor_host="172.17.0.1",  # xxl-admin访问executor的地址
+    executor_listen_host="0.0.0.0",  # xxl-admin监听时绑定的host
+    debug=True,
 )
 
 app = PyxxlRunner(config)

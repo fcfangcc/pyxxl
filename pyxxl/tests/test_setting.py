@@ -12,6 +12,7 @@ def test_config():
     setting = ExecutorConfig(
         xxl_admin_baseurl=TEST_ADMIN_URL,
         executor_app_name="test",
+        dotenv_try=False,
     )
     assert setting.executor_host == get_network_ip()
     assert setting.executor_app_name == "test"
@@ -22,7 +23,11 @@ def test_config():
     os.environ["GRACEFUL_TIMEOUT"] = "500"
     os.environ["GRACEFUL_CLOSE"] = "False"
 
-    setting = ExecutorConfig(xxl_admin_baseurl="", executor_app_name="")
+    setting = ExecutorConfig(
+        xxl_admin_baseurl="",
+        executor_app_name="",
+        dotenv_try=True,
+    )
     assert setting.executor_app_name == "fromenv"
     assert setting.xxl_admin_baseurl == TEST_ADMIN_URL
     assert setting.graceful_timeout == 500
@@ -59,4 +64,4 @@ def test_config():
 )
 def test_error(msg, error, kwargs):
     with pytest.raises(error, match=msg):
-        ExecutorConfig(**kwargs)
+        ExecutorConfig(**kwargs, dotenv_try=False)

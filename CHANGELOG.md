@@ -1,3 +1,7 @@
+### 0.3.4
+* **executor_server_host** 修改为 **executor_listen_host**
+* 新增配置 **executor_listen_port**
+
 ### 0.3.3
 * 兼容XXL-JOB 2.2版本
 

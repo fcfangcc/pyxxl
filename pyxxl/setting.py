@@ -1,12 +1,12 @@
 import inspect
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Literal, Optional
 
 from yarl import URL
 
-from pyxxl.utils import get_network_ip
+from pyxxl.utils import get_network_ip, setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +31,27 @@ class ExecutorConfig:
     access_token: Optional[str] = None
     """调度器的token. Default: None"""
 
-    executor_host: str = field(default_factory=get_network_ip)
-    """执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址. Default: 获取到第一个网卡的ip地址"""
-    executor_port: int = 9999
-    """执行器绑定的http服务的端口,作用同host. Default: 9999"""
     executor_log_path: str = "pyxxl.log"
     """执行器日志输出的路径(注意路径必须存在). Default: pyxxl.log"""
-    executor_server_host: str = ""
+    executor_port: int = 9999
+    """执行器绑定的http服务的端口,作用同host. Default: 9999"""
+    executor_host: str = field(default_factory=get_network_ip)
+    """执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址. Default: 获取到第一个网卡的ip地址"""
+    executor_listen_port: int = 0
+    """Default: executor_port"""
+    executor_listen_host: str = ""
     """
     执行器HTTP服务绑定的HOST,大部分情况下不需要设置. Default: executor_host
 
     当执行器通过了端口转发暴露给admin的时候,需要把executor_host填写为直连admin的地址.
-    然后executor_server_host需要配置为0.0.0.0或者转发设备能访问的地址,不然会出现服务启动失败的情况
+
+    列如调用路径为 xxl-admin -> nginx_ip_or_domain:80 -> executor:9999
+    这个时候需要配置为
+
+        executor_port=80
+        executor_host=nginx_ip_or_domain
+        executor_listen_port=9999
+        executor_listen_host="0.0.0.0"
 
     """
 
@@ -66,11 +75,31 @@ class ExecutorConfig:
     log_expired_days: int = 14
     """任务日志存储的本地的过期天数. Default: 14"""
 
+    dotenv_try: bool = True
     dotenv_path: Optional[str] = None
     """.env文件的路径,默认为当前路径下的.env文件."""
     debug: bool = False
 
     def __post_init__(self) -> None:
+        if self.debug:
+            setup_logging(self.executor_log_path, __name__, level=logging.DEBUG)
+
+        if self.dotenv_try:
+            self._try_load_from_dotenv()
+
+        self._valid_xxl_admin_baseurl()
+        self._valid_executor_app_name()
+        self._valid_logger_target()
+
+        if not self.executor_listen_host:
+            self.executor_listen_host = self.executor_host
+
+        if not self.executor_listen_port:
+            self.executor_listen_port = self.executor_port
+
+        logger.debug("init config: %s", asdict(self))
+
+    def _try_load_from_dotenv(self) -> None:
         try:
             from dotenv import load_dotenv
 
@@ -87,12 +116,6 @@ class ExecutorConfig:
                 else:
                     real_value = param.annotation(env_val)
                 setattr(self, param.name, real_value)
-
-        self._valid_xxl_admin_baseurl()
-        self._valid_executor_app_name()
-        self._valid_logger_target()
-        if not self.executor_server_host:
-            self.executor_server_host = self.executor_host
 
     def _valid_xxl_admin_baseurl(self) -> None:
         _admin_url: URL = URL(self.xxl_admin_baseurl)
@@ -112,4 +135,5 @@ class ExecutorConfig:
 
     @property
     def executor_baseurl(self) -> str:
+        """暴露给xxl-admin的地址"""
         return "http://{host}:{port}".format(host=self.executor_host, port=self.executor_port)

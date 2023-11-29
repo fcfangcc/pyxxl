@@ -55,7 +55,7 @@ class PyxxlRunner:
         self.handler = handler or JobHandler()
         self.config = config
         log_level = logging.DEBUG if self.config.debug else logging.INFO
-        setup_logging(self.config.executor_log_path, level=log_level)
+        setup_logging(self.config.executor_log_path, "pyxxl", level=log_level)
 
     async def _register_task(self, xxl_client: XXL) -> None:
         # todo: 这是个调度器的bug，必须循环去注册，不然会显示为离线
@@ -122,8 +122,8 @@ class PyxxlRunner:
         """用aiohttp的web服务器启动执行器"""
         web.run_app(
             self.create_server_app(),
-            port=self.config.executor_port,
-            host=self.config.executor_server_host,
+            port=self.config.executor_listen_port,
+            host=self.config.executor_listen_host,
             handle_signals=handle_signals,
         )
 
