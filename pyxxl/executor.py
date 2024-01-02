@@ -86,7 +86,7 @@ class JobHandler:
                 warnings.warn(
                     "Using the sync method will unknown blocking exception, consider using async method.",
                     SyntaxWarning,
-                    2,
+                    stacklevel=2,
                 )
             self._handlers[handler_name] = handler
             logger.debug("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))

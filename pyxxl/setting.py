@@ -36,7 +36,10 @@ class ExecutorConfig:
     executor_port: int = 9999
     """执行器绑定的http服务的端口,作用同host. Default: 9999"""
     executor_host: str = field(default_factory=get_network_ip)
-    """执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址. Default: 获取到第一个网卡的ip地址"""
+    """
+    执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址.
+    Default: 获取到第一个网卡的ip地址
+    """
     executor_listen_port: int = 0
     """Default: executor_port"""
     executor_listen_host: str = ""

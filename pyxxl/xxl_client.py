@@ -69,7 +69,7 @@ class XXL:
         await self._post("registryRemove", payload, retry_times=3)
         logger.info("RegistryRemove successful. %s" % payload)
 
-    async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: str = None) -> None:
+    async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: Optional[str] = None) -> None:
         # executeResult兼容xxl-job2.2版本
         payload = [
             {
