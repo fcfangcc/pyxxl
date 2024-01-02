@@ -85,12 +85,12 @@ class RedisLog(LogBase):
     def key(self, log_id: int) -> str:
         return KEY_PREFIX.format(app=self.app, log_id=log_id)
 
-    async def read_task_logs(self, log_id: int, *, key: str = None) -> str:
+    async def read_task_logs(self, log_id: int, *, key: Optional[str] = None) -> str:
         key = key or self.key(log_id)
         # todo: use async
         return "".join(i.decode() for i in self.rclient.lrange(key, 0, -1))
 
-    async def get_logs(self, request: LogRequest, *, key: str = None) -> LogResponse:
+    async def get_logs(self, request: LogRequest, *, key: Optional[str] = None) -> LogResponse:
         key = key or self.key(request["logId"])
         from_line = request["fromLineNum"] - 1
         to_line = request["fromLineNum"] - 1 + self.log_tail_lines

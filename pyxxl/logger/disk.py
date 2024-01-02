@@ -5,7 +5,7 @@ import weakref
 from contextlib import asynccontextmanager
 from logging import FileHandler
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, List
+from typing import TYPE_CHECKING, Any, AsyncGenerator, List, Optional
 
 import aiofiles
 
@@ -79,7 +79,7 @@ class DiskLog(LogBase):
             logger.addHandler(h)
         return XXLogger(logger)
 
-    async def get_logs(self, request: LogRequest, *, key: str = None) -> LogResponse:
+    async def get_logs(self, request: LogRequest, *, key: Optional[str] = None) -> LogResponse:
         # todo: 优化获取中间行的逻辑，缓存之前每行日志的大小然后直接seek
         logs = ""
         to_line_num = request["fromLineNum"]  # start with 1
@@ -106,7 +106,7 @@ class DiskLog(LogBase):
             isEnd=is_end,
         )
 
-    async def read_task_logs(self, log_id: int, *, key: str = None) -> str:
+    async def read_task_logs(self, log_id: int, *, key: Optional[str] = None) -> str:
         key = key or self.key(log_id)
         async with aiofiles.open(key, mode="r") as f:
             return await f.read()
