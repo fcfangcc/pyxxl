@@ -135,3 +135,5 @@ tables_xxl_job*.sql
 docs/site
 .ruff_cache/
 logs/
+
+.DS_Store

@@ -46,3 +46,6 @@ class LogBase(ABC):
         while True:
             await self.expired_once()
             await asyncio.sleep(seconds)
+
+    def after_running(self, logger: logging.Logger) -> None:
+        return None

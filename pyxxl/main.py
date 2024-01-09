@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import os
 from multiprocessing import Process
 from typing import Any, AsyncGenerator, Optional
 
@@ -23,6 +24,13 @@ if try_import("prometheus_client"):
         successed_callback=prometheus.success,
         failed_callback=prometheus.failed,
     )
+
+
+async def server_info_ctx(app: web.Application) -> AsyncGenerator:
+    pid = os.getpid()
+    logger.info(f"start executor server with pid {pid}.")
+    yield
+    logger.info(f"stop executor server. pid={pid}.")
 
 
 class PyxxlRunner:
@@ -116,6 +124,7 @@ class PyxxlRunner:
         """获取执行器的app对象,可以使用自己喜欢的服务器启动这个webapp"""
         app = create_app()
         app.cleanup_ctx.append(self._cleanup_ctx)
+        app.cleanup_ctx.append(server_info_ctx)
         return app
 
     def run_executor(self, handle_signals: bool = True) -> None:

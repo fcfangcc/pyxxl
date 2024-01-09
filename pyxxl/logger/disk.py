@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-import weakref
 from contextlib import asynccontextmanager
 from logging import FileHandler
 from pathlib import Path
@@ -24,35 +23,6 @@ MAX_LOG_TAIL_LINES = 1000
 logger = logging.getLogger(__name__)
 
 
-def _close_file_stream(_logger: logging.Logger) -> None:
-    # !!! StreamHandler remove会有问题，需要判断是否是FileHandler
-    for h in _logger.handlers:
-        if isinstance(h, logging.FileHandler):
-            logger.debug("close file log object: {}.".format(h))
-            h.close()
-            _logger.removeHandler(h)
-
-
-class XXLogger:
-    """为了可以关闭文件写入流"""
-
-    def __init__(self, logger: logging.Logger) -> None:
-        self._logger = logger
-
-        self._finalizer = weakref.finalize(self, _close_file_stream, self._logger)
-
-    def remove(self) -> None:
-        self._finalizer()
-
-    @property
-    def removed(self) -> bool:
-        return not self._finalizer.alive
-
-    def __getattr__(self, name: str) -> Any:
-        if name in ["info", "error", "warning", "debug", "exception", "handlers"]:
-            return getattr(self._logger, name)
-
-
 class DiskLog(LogBase):
     def __init__(self, log_path: str, log_tail_lines: int = 0, expired_days: int = 14) -> None:
         self.log_path = Path(log_path)
@@ -65,9 +35,7 @@ class DiskLog(LogBase):
     def key(self, log_id: int) -> str:
         return self.log_path.joinpath(LOG_NAME_PREFIX.format(log_id=log_id)).absolute().as_posix()
 
-    def get_logger(  # type:ignore[override]
-        self, log_id: int, *, stdout: bool = True, level: int = logging.INFO
-    ) -> XXLogger:
+    def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger:
         logger = logging.getLogger("pyxxl-task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
@@ -77,7 +45,7 @@ class DiskLog(LogBase):
             h.setFormatter(STD_FORMATTER)
             h.setLevel(level)
             logger.addHandler(h)
-        return XXLogger(logger)
+        return logger
 
     async def get_logs(self, request: LogRequest, *, key: Optional[str] = None) -> LogResponse:
         # todo: 优化获取中间行的逻辑，缓存之前每行日志的大小然后直接seek
@@ -139,3 +107,11 @@ class DiskLog(LogBase):
         async with aiofiles.tempfile.TemporaryDirectory() as d:
             handler = DiskLog(log_path=d)
             yield handler
+
+    def after_running(self, logger: logging.Logger) -> None:
+        # !!! StreamHandler remove会有问题，需要判断是否是FileHandler
+        file_handlers = [h for h in logger.handlers if isinstance(h, logging.FileHandler)]
+        for fh in file_handlers:
+            logger.debug("close file log object: {}.".format(fh))
+            fh.close()
+            logger.removeHandler(fh)

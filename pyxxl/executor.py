@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, List, MutableSet, Optional
 from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
-from pyxxl.logger import DiskLog, LogBase
+from pyxxl.logger import DiskLog, LogBase, new_logger
 from pyxxl.schema import RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
@@ -218,35 +218,35 @@ class Executor:
         handler = self.handler.get(data.executorHandler)
         assert handler
         g.set_xxl_run_data(data)
-        g.set_task_logger(self.logger_factory.get_logger(data.logId))
-        start_time = int(time.time() * 1000)
-        try:
-            g.logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
-            timeout = data.executorTimeout or self.config.task_timeout
-            result = await handler.start(timeout)
-            g.logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
-            await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
-            self.successed_callback()
-        except asyncio.CancelledError as e:
-            g.logger.info(e, exc_info=True)
-            await self.xxl_client.callback(data.logId, start_time, code=500, msg="CancelledError")
-            self.failed_callback("cancelled")
-        except asyncio.exceptions.TimeoutError as e:
-            # 同步任务run_in_executor超时会抛出TimeoutError异常
-            # !!! 但是注意线程里面的任务仍然在运行，可能会占满所有的线程池
-            g.logger.warning(e, exc_info=True)
-            await self.xxl_client.callback(data.logId, start_time, code=500, msg="TimeoutError")
-            self.failed_callback("timeout")
-        except Exception as err:  # pylint: disable=broad-except
-            g.logger.exception(err, exc_info=True)
-            await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
-            self.failed_callback("exception")
-        finally:
-            if self.lock.locked():
-                await self._finish(data.jobId)
-            else:
-                async with self.lock:
+        with new_logger(self.logger_factory, data.logId) as task_logger:
+            start_time = int(time.time() * 1000)
+            try:
+                task_logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
+                timeout = data.executorTimeout or self.config.task_timeout
+                result = await handler.start(timeout)
+                task_logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
+                await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
+                self.successed_callback()
+            except asyncio.CancelledError as e:
+                task_logger.info(e, exc_info=True)
+                await self.xxl_client.callback(data.logId, start_time, code=500, msg="CancelledError")
+                self.failed_callback("cancelled")
+            except asyncio.exceptions.TimeoutError as e:
+                # 同步任务run_in_executor超时会抛出TimeoutError异常
+                # !!! 但是注意线程里面的任务仍然在运行，可能会占满所有的线程池
+                task_logger.warning(e, exc_info=True)
+                await self.xxl_client.callback(data.logId, start_time, code=500, msg="TimeoutError")
+                self.failed_callback("timeout")
+            except Exception as err:  # pylint: disable=broad-except
+                task_logger.exception(err, exc_info=True)
+                await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
+                self.failed_callback("exception")
+            finally:
+                if self.lock.locked():
                     await self._finish(data.jobId)
+                else:
+                    async with self.lock:
+                        await self._finish(data.jobId)
 
     async def _finish(self, job_id: int) -> None:
         # 所有移除tasks的操作全部在这里执行

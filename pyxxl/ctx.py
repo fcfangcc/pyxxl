@@ -1,6 +1,6 @@
 import logging
 import threading
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from typing import Any, Optional
 
 from pyxxl.schema import RunData
@@ -24,8 +24,8 @@ class GlobalVars:
         return self._DATA.get()
 
     @classmethod
-    def set_task_logger(cls, logger: logging.Logger) -> None:
-        cls._LOGGER.set(logger)
+    def set_task_logger(cls, logger: logging.Logger) -> Token:
+        return cls._LOGGER.set(logger)
 
     @property
     def logger(self) -> logging.Logger:  # pragma: no cover
