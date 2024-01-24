@@ -51,4 +51,5 @@ def test_task4():
     return "成功3"
 
 
-app.run_executor()
+if __name__ == "__main__":
+    app.run_executor()

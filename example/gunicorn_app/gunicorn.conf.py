@@ -24,6 +24,6 @@ def when_ready(server):
         debug=True,
     )
 
-    runner = PyxxlRunner(config, handler=xxl_handler)
-    server.pyxxl_runner = runner
-    runner.run_with_daemon()
+    pyxxl_app = PyxxlRunner(config, handler=xxl_handler)
+    server.pyxxl_app = pyxxl_app
+    pyxxl_app.run_with_daemon()

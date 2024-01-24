@@ -4,7 +4,7 @@ repo_url: https://github.com/fcfangcc/pyxxl
 
 nav:
     - Index: 'index.md'
-    - Example: 'example.md'
+    - Examples And Deploy: 'example.md'
     - ClassDocs:
       - apis/runner.md
       - apis/config.md

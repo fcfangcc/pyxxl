@@ -37,10 +37,13 @@
 
 ```shell
 pip install pyxxl
+
 # 如果日志需要写入redis
 pip install "pyxxl[redis]"
+
 # 如果需要从.env加载配置
 pip install "pyxxl[dotenv]"
+
 # 安装所有功能
 pip install "pyxxl[all]"
 ```
@@ -139,5 +142,5 @@ def sync_loop_demo2():
 # poetry config virtualenvs.in-project true
 poetry install --all-extras
 # 修改app.py中相关的配置信息,然后启动
-poetry run python example/app.py
+poetry run python example/executor_app.py
 ```
