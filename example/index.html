@@ -19,7 +19,7 @@
     
     
       
-        <title>Example - PYXXL</title>
+        <title>Examples And Deploy - PYXXL</title>
       
     
     
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#example" class="md-skip">
+        <a href="#example-and-deploy" class="md-skip">
           Skip to content
         </a>
       
@@ -104,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Example
+              Examples And Deploy
             
           </span>
         </div>
@@ -239,12 +239,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Example
+          Examples And Deploy
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Example
+        Examples And Deploy
       </a>
       
         
@@ -263,15 +263,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#app" class="md-nav__link">
-    App
+  <a href="#examples" class="md-nav__link">
+    Examples
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#gunicorn-runserver" class="md-nav__link">
-    Gunicorn Runserver
+  <a href="#run-executor-app" class="md-nav__link">
+    Run Executor App
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-with-gunicorn-server" class="md-nav__link">
+    Run With Gunicorn Server
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-with-flask-only-for-develop" class="md-nav__link">
+    Run with Flask (Only for develop)
   </a>
   
 </li>
@@ -417,15 +431,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#app" class="md-nav__link">
-    App
+  <a href="#examples" class="md-nav__link">
+    Examples
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#gunicorn-runserver" class="md-nav__link">
-    Gunicorn Runserver
+  <a href="#run-executor-app" class="md-nav__link">
+    Run Executor App
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-with-gunicorn-server" class="md-nav__link">
+    Run With Gunicorn Server
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-with-flask-only-for-develop" class="md-nav__link">
+    Run with Flask (Only for develop)
   </a>
   
 </li>
@@ -448,9 +476,10 @@
   
 
 
-<h1 id="example">Example</h1>
+<h1 id="example-and-deploy">Example And Deploy</h1>
+<h2 id="examples">Examples</h2>
 <p>For full examples see <a href="https://github.com/fcfangcc/pyxxl/tree/main/example">github</a>.</p>
-<h2 id="app">App</h2>
+<h2 id="run-executor-app">Run Executor App</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">asyncio</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">time</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -461,7 +490,7 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ExecutorConfig</span><span class="p">(</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">xxl_admin_baseurl</span><span class="o">=</span><span class="s2">&quot;http://localhost:8080/xxl-job-admin/api/&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">executor_app_name</span><span class="o">=</span><span class="s2">&quot;xxl-job-executor-sample&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">executor_host</span><span class="o">=</span><span class="s2">&quot;172.17.0.1&quot;</span><span class="p">,</span>  <span class="c1"># xxl-admin访问executor的地址</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">executor_host</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>  <span class="c1"># xxl-admin访问executor的地址</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">executor_listen_host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span>  <span class="c1"># xxl-admin监听时绑定的host</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">)</span>
@@ -504,61 +533,102 @@
 <a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>    <span class="k">return</span> <span class="s2">&quot;成功3&quot;</span>
 <a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>
 <a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>
-<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="n">app</span><span class="o">.</span><span class="n">run_executor</span><span class="p">()</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>    <span class="n">app</span><span class="o">.</span><span class="n">run_executor</span><span class="p">()</span>
 </code></pre></div>
-<h2 id="gunicorn-runserver">Gunicorn Runserver</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python3<span class="w"> </span>executor_app.py
+</code></pre></div>
+<h2 id="run-with-gunicorn-server">Run With Gunicorn Server</h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>由于Gunicorn一般是多进程模式部署，所以executor不能在webapp中绑定启动</p>
+<p>需要在Gunicorn启动之后（when_ready）单独起一个进程来运行executor</p>
+<p>此部署方式适用于任何可以被Gunicorn部署的web框架集成PYXXL</p>
+</div>
 <p>app.py</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">asyncio</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span> <span class="nn">pyxxl</span> <span class="kn">import</span> <span class="n">JobHandler</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">xxl_handler</span> <span class="o">=</span> <span class="n">JobHandler</span><span class="p">()</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">root</span><span class="p">():</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello World&quot;</span><span class="p">}</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="nd">@xxl_handler</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;demoJobHandler&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">test_task</span><span class="p">():</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="k">return</span> <span class="s2">&quot;成功10&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">asyncio</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kn">from</span> <span class="nn">pyxxl</span> <span class="kn">import</span> <span class="n">JobHandler</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">xxl_handler</span> <span class="o">=</span> <span class="n">JobHandler</span><span class="p">()</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">root</span><span class="p">():</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello World&quot;</span><span class="p">}</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="nd">@xxl_handler</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;demoJobHandler&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">test_task</span><span class="p">():</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="k">return</span> <span class="s2">&quot;成功10&quot;</span>
 </code></pre></div>
 <p>gunicorn.conf.py
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">atexit</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span> <span class="nn">multiprocessing.util</span> <span class="kn">import</span> <span class="n">_exit_function</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="kn">from</span> <span class="nn">pyxxl</span> <span class="kn">import</span> <span class="n">ExecutorConfig</span><span class="p">,</span> <span class="n">PyxxlRunner</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">bind</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;0.0.0.0:8000&quot;</span><span class="p">]</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">backlog</span> <span class="o">=</span> <span class="mi">512</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">timeout</span> <span class="o">=</span> <span class="mi">300</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">graceful_timeout</span> <span class="o">=</span> <span class="mi">2</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">limit_request_field_size</span> <span class="o">=</span> <span class="mi">8192</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="k">def</span> <span class="nf">when_ready</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="c1"># pylint: disable=import-outside-toplevel,unused-import,no-name-in-module</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="kn">from</span> <span class="nn">app</span> <span class="kn">import</span> <span class="n">xxl_handler</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="n">atexit</span><span class="o">.</span><span class="n">unregister</span><span class="p">(</span><span class="n">_exit_function</span><span class="p">)</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">ExecutorConfig</span><span class="p">(</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>        <span class="n">xxl_admin_baseurl</span><span class="o">=</span><span class="s2">&quot;http://localhost:8080/xxl-job-admin/api/&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>        <span class="n">executor_app_name</span><span class="o">=</span><span class="s2">&quot;xxl-job-executor-sample&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>        <span class="n">executor_host</span><span class="o">=</span><span class="s2">&quot;172.17.0.1&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>        <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>    <span class="p">)</span>
-<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
-<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>    <span class="n">runner</span> <span class="o">=</span> <span class="n">PyxxlRunner</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">handler</span><span class="o">=</span><span class="n">xxl_handler</span><span class="p">)</span>
-<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>    <span class="n">server</span><span class="o">.</span><span class="n">pyxxl_runner</span> <span class="o">=</span> <span class="n">runner</span>
-<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>    <span class="n">runner</span><span class="o">.</span><span class="n">run_with_daemon</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span> <span class="nn">atexit</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span> <span class="nn">multiprocessing.util</span> <span class="kn">import</span> <span class="n">_exit_function</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span> <span class="nn">pyxxl</span> <span class="kn">import</span> <span class="n">ExecutorConfig</span><span class="p">,</span> <span class="n">PyxxlRunner</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">bind</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;0.0.0.0:8000&quot;</span><span class="p">]</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">backlog</span> <span class="o">=</span> <span class="mi">512</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">workers</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">timeout</span> <span class="o">=</span> <span class="mi">300</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">graceful_timeout</span> <span class="o">=</span> <span class="mi">2</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">limit_request_field_size</span> <span class="o">=</span> <span class="mi">8192</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="k">def</span> <span class="nf">when_ready</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="c1"># pylint: disable=import-outside-toplevel,unused-import,no-name-in-module</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="kn">from</span> <span class="nn">app</span> <span class="kn">import</span> <span class="n">xxl_handler</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="n">atexit</span><span class="o">.</span><span class="n">unregister</span><span class="p">(</span><span class="n">_exit_function</span><span class="p">)</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">ExecutorConfig</span><span class="p">(</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>        <span class="n">xxl_admin_baseurl</span><span class="o">=</span><span class="s2">&quot;http://localhost:8080/xxl-job-admin/api/&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>        <span class="n">executor_app_name</span><span class="o">=</span><span class="s2">&quot;xxl-job-executor-sample&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>        <span class="n">executor_host</span><span class="o">=</span><span class="s2">&quot;172.17.0.1&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>        <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>    <span class="p">)</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>    <span class="n">pyxxl_app</span> <span class="o">=</span> <span class="n">PyxxlRunner</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">handler</span><span class="o">=</span><span class="n">xxl_handler</span><span class="p">)</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>    <span class="n">server</span><span class="o">.</span><span class="n">pyxxl_app</span> <span class="o">=</span> <span class="n">pyxxl_app</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>    <span class="n">pyxxl_app</span><span class="o">.</span><span class="n">run_with_daemon</span><span class="p">()</span>
 </code></pre></div></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>gunicorn<span class="w"> </span>-c<span class="w"> </span>gunicorn.conf.py<span class="w"> </span>app:app<span class="w"> </span>-b<span class="w"> </span><span class="m">0</span>.0.0.0:9000
+</code></pre></div>
+<h2 id="run-with-flask-only-for-develop">Run with Flask (Only for develop)</h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>此案例仅用于开发模式和本地调试使用，部署到生产环境时强烈建议和webapp分开部署！</p>
+<p>由于Flask一般是多进程模式部署，和executor一起部署时需要executor需要单独启动，不能绑定在flask_app上</p>
+<p>如果确定要部署在一起，参考gunicorn的案例</p>
+</div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="k">return</span> <span class="s2">&quot;&lt;p&gt;Hello, World!&lt;/p&gt;&quot;</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="c1"># 如果是多进程部署的flask无法这样使用，请参考gunicorn的example</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="c1"># 此案例仅用于本地开发和调试用</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">freeze_support</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="kn">from</span> <span class="nn">executor_app</span> <span class="kn">import</span> <span class="n">app</span> <span class="k">as</span> <span class="n">pyxxl_app</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    <span class="n">freeze_support</span><span class="p">()</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    <span class="n">app</span><span class="o">.</span><span class="n">pyxxl_app</span> <span class="o">=</span> <span class="n">pyxxl_app</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>    <span class="n">pyxxl_app</span><span class="o">.</span><span class="n">run_with_daemon</span><span class="p">()</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
 
 
 
