@@ -7,6 +7,7 @@ PASSWD='xxlpasswd@123'
 USERNAME="xxluser"
 XXLIMAGE="xuxueli/xxl-job-admin:2.3.0"
 XXLSQLFILE="tables_xxl_job23.sql"
+TOKEN="1234567890"
 
 # 如果Mac m2, 拉取镜像的时候需要加platform
 # docker pull --platform=linux/amd64 mysql:5.7
@@ -39,7 +40,7 @@ set -e
 if [ ! $(docker ps -q -f "name=xxl-job-admin") ];then
     # docker pull --platform=linux/amd64 $XXLIMAGE
     docker run -d --link xxl-db:xxl-db --name xxl-job-admin \
-    -e PARAMS="--spring.datasource.url=jdbc:mysql://xxl-db:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true --spring.datasource.username=$USERNAME --spring.datasource.password=$PASSWD" \
+    -e PARAMS="--spring.datasource.url=jdbc:mysql://xxl-db:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true --spring.datasource.username=$USERNAME --spring.datasource.password=$PASSWD --xxl.job.accessToken=$TOKEN" \
     -p 8080:8080 \
     -v /tmp:/data/applogs  \
     $XXLIMAGE

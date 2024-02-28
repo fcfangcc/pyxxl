@@ -2,7 +2,7 @@ import inspect
 import logging
 import os
 from dataclasses import asdict, dataclass, field
-from typing import Literal, Optional
+from typing import Any, Literal, Optional, get_origin
 
 from yarl import URL
 
@@ -113,10 +113,11 @@ class ExecutorConfig:
         for param in inspect.signature(ExecutorConfig).parameters.values():
             env_val = os.getenv(param.name) or os.getenv(param.name.upper())
             if env_val is not None:
-                logger.debug("Get [%s] config from env: [%s]" % (param.name, env_val))
+                logger.debug("Get [%s] config from env." % (param.name))
+                real_value: Any = env_val
                 if param.annotation is bool:
                     real_value = env_val in ["true", "True"]
-                else:
+                elif get_origin(param.annotation) is None:
                     real_value = param.annotation(env_val)
                 setattr(self, param.name, real_value)
 

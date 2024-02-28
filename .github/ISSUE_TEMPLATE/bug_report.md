@@ -20,7 +20,7 @@ assignees: ''
 
 **Specifications like the version of the project, operating system, or hardware**
 
-* XXL-JOB 版本: 
-* pyxxl 版本: 
+* XXL-JOB 版本:
+* pyxxl 版本:
 * python 版本:
 * other more:
