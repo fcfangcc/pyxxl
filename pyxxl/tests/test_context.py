@@ -19,8 +19,8 @@ async def test_runner_callback(executor: Executor):
         assert logId == 1
 
     for handler in ["test_ctx", "test_ctx_sync"]:
-        data = RunData(
-            **dict(
+        data = RunData.from_dict(
+            dict(
                 logId=1,
                 jobId=11,
                 executorHandler=handler,

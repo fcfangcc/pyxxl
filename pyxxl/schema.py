@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Optional
 
 
@@ -32,3 +32,8 @@ class RunData:
     glueUpdatetime: Optional[int] = None
     broadcastIndex: Optional[int] = None
     broadcastTotal: Optional[int] = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "RunData":
+        class_fields = {f.name for f in fields(cls)}
+        return RunData(**{k: v for k, v in data.items() if k in class_fields})

@@ -50,7 +50,7 @@ async def run(request: web.Request) -> web.Response:
     }
     """
     data = await request.json()
-    run_data = RunData(**data)
+    run_data = RunData.from_dict(data)
     logger.info("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
     msg = None
     try:

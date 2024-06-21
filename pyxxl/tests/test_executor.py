@@ -39,12 +39,13 @@ async def test_runner_not_found(executor: Executor, job_id: int):
     executor.reset_handler(job_handler)
     with pytest.raises(JobNotFoundError):
         await executor.run_job(
-            RunData(
-                **dict(
+            RunData.from_dict(
+                dict(
                     logId=211,
                     jobId=job_id,
                     executorHandler="not_found",
                     executorBlockStrategy=executorBlockStrategy.DISCARD_LATER.value,
+                    errorTest="errorTest",
                 )
             )
         )
@@ -56,8 +57,8 @@ async def test_runner_not_found(executor: Executor, job_id: int):
 async def test_runner_callback(executor: Executor, handler_name: str):
     executor.reset_handler(job_handler)
     executor.xxl_client.clear_result()
-    data = RunData(
-        **dict(
+    data = RunData.from_dict(
+        dict(
             logId=1,
             jobId=11,
             executorHandler=handler_name,
@@ -65,8 +66,8 @@ async def test_runner_callback(executor: Executor, handler_name: str):
         )
     )
     await executor.run_job(data)
-    data = RunData(
-        **dict(
+    data = RunData.from_dict(
+        dict(
             logId=2,
             jobId=12,
             executorHandler="pytest_executor_error",
