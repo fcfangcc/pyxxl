@@ -13,7 +13,7 @@ version = "0.3.6"
 aiofiles = "^22.1.0"
 aiohttp = "^3.8.1"
 prometheus-client = { version = "*", optional = true }
-python = "^3.9"
+python = "^3.10"
 python-dotenv = { version = "*", optional = true }
 redis = { version = "^4.4.0", optional = true }
 
@@ -75,7 +75,7 @@ exclude_lines = [
 
 [tool.black]
 line-length = 119
-target-version = ['py39']
+target-version = ['py310']
 
 [tool.ruff]
 exclude = ["__init__.py"]
