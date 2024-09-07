@@ -10,6 +10,7 @@ nav:
       - apis/config.md
       - apis/executor.md
       - apis/run_data.md
+    - QA: 'qa.md'
     - Changelog: 'changelog.md'
 
 theme:

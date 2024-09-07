@@ -3,12 +3,13 @@ name = "pyxxl"
 authors = [{ name = "fcfangcc", email = "swjfc22@live.com" }]
 description = "A Python executor for XXL-jobs"
 readme = "README.md"
-requires-python = ">=3.10"
-version = "0.3.6"
+requires-python = ">=3.9"
+version = "0.3.7a1"
 classifiers = [
   "Topic :: Software Development",
   "Libraries :: Python Modules",
   "Programming Language :: Python",
+  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -37,7 +38,7 @@ dev = [
   "pytest-aiohttp==1.0.4",
   "pytest-asyncio==0.18.3",
   "pytest-cov==3.0.0",
-  "ruff~=0.1.9",
+  "ruff<=1",
 ]
 
 [build-system]
@@ -73,11 +74,13 @@ target-version = ['py310']
 [tool.ruff]
 exclude = ["__init__.py"]
 line-length = 119
-select = ["E", "W", "F", "I", "C", "B", "PGH"]
 
+
+[tool.ruff.lint]
 ignore = [
   "C408", # Unnecessary `dict` call (rewrite as a literal)
 ]
+select = ["E", "W", "F", "I", "C", "B", "PGH"]
 
 [tool.pytest.ini_options]
 addopts = "--asyncio-mode auto"
