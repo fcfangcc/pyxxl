@@ -31,7 +31,6 @@ doc = [
   "mkdocstrings[python]~=0.20",
 ]
 dev = [
-  "black~=23.1.0",
   "mypy~=1.8.0",
   "pre-commit~=3.6.0",
   "pytest==7.1",
@@ -66,10 +65,6 @@ exclude_lines = [
   "\\.\\.\\.",
   "if TYPE_CHECKING",
 ]
-
-[tool.black]
-line-length = 119
-target-version = ['py310']
 
 [tool.ruff]
 exclude = ["__init__.py"]

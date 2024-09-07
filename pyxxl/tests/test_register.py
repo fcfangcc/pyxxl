@@ -11,8 +11,7 @@ async def test_hander_error(executor: Executor):
     with pytest.raises(JobRegisterError):
 
         @executor.handler.register
-        def test_dup_error():
-            ...
+        def test_dup_error(): ...
 
         @executor.handler.register
         def test_dup_error():  # noqa: F811
@@ -25,8 +24,7 @@ async def test_hander(executor: Executor):
     executor.reset_handler()
 
     @executor.handler.register
-    def test_hander1():
-        ...
+    def test_hander1(): ...
 
     @executor.handler.register(replace=True)
     async def test_hander1():  # noqa: F811
