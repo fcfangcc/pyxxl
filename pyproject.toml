@@ -1,59 +1,52 @@
-[tool.poetry]
-authors = ["fcfangcc <swjfc22@live.com>"]
-classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
-description = "A Python executor for XXL-jobs"
-keywords = ["XXL"]
-license = "GPL-3.0-only"
+[project]
 name = "pyxxl"
+authors = [{ name = "fcfangcc", email = "swjfc22@live.com" }]
+description = "A Python executor for XXL-jobs"
 readme = "README.md"
-repository = "https://github.com/fcfangcc/pyxxl"
-version = "0.3.6"
+requires-python = ">=3.9"
+version = "0.3.7a1"
+classifiers = [
+  "Topic :: Software Development",
+  "Libraries :: Python Modules",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+keywords = ["XXL", "scheduled"]
+license = { text = "GPL-3.0-only" }
+dependencies = ["aiofiles", "aiohttp"]
 
-[tool.poetry.dependencies]
-aiofiles = "^22.1.0"
-aiohttp = "^3.8.1"
-prometheus-client = { version = "*", optional = true }
-python = "^3.10"
-python-dotenv = { version = "*", optional = true }
-redis = { version = "^4.4.0", optional = true }
 
-[tool.poetry.extras]
-all = ["redis", "python-dotenv", "prometheus-client"]
+[project.optional-dependencies]
 dotenv = ["python-dotenv"]
 metrics = ["prometheus-client"]
 redis = ["redis"]
-
-[tool.poetry.group.doc.dependencies]
-mdx-include = "^1.4.2"
-mkdocs = "^1.4.2"
-mkdocs-material = "^9.0.9"
-mkdocstrings = { version = "^0.20.0", extras = ["python"] }
-
-[tool.poetry.group.dev.dependencies]
-black = "23.1.0"
-mypy = "^1.8.0"
-pre-commit = "^3.6.0"
-pytest = "7.1.2"
-pytest-aiohttp = "1.0.4"
-pytest-asyncio = "0.18.3"
-pytest-cov = "3.0.0"
-ruff = "^0.1.9"
+all = ["redis", "python-dotenv", "prometheus-client"]
+doc = [
+  "mdx-include~=1.4",
+  "mkdocs~=1.4",
+  "mkdocs-material~=9.0",
+  "mkdocstrings[python]~=0.20",
+]
+dev = [
+  "mypy~=1.8.0",
+  "pre-commit~=3.6.0",
+  "pytest==7.1",
+  "pytest-aiohttp==1.0.4",
+  "pytest-asyncio==0.18.3",
+  "pytest-cov==3.0.0",
+  "ruff<=1",
+]
 
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0"]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
 
-# if your need
-# https://python-poetry.org/docs/repositories/#install-dependencies-from-a-private-repository
-[[tool.poetry.source]]
-name = "aliyun"
-url = "https://mirrors.aliyun.com/pypi/simple/"
-priority = "primary"
-
-
-[[tool.poetry.source]]
-name = "PyPI"
-priority = "primary"
+[tool.setuptools.packages.find]
+include = ["pyxxl*"]
+exclude = ["pyxxl.tests*"]
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -73,18 +66,16 @@ exclude_lines = [
   "if TYPE_CHECKING",
 ]
 
-[tool.black]
-line-length = 119
-target-version = ['py310']
-
 [tool.ruff]
 exclude = ["__init__.py"]
 line-length = 119
-select = ["E", "W", "F", "I", "C", "B", "PGH"]
 
+
+[tool.ruff.lint]
 ignore = [
   "C408", # Unnecessary `dict` call (rewrite as a literal)
 ]
+select = ["E", "W", "F", "I", "C", "B", "PGH"]
 
 [tool.pytest.ini_options]
 addopts = "--asyncio-mode auto"

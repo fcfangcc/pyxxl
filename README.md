@@ -139,8 +139,7 @@ def sync_loop_demo2():
 
 ```shell
 # if you need. set venv in project.
-# poetry config virtualenvs.in-project true
-poetry install --all-extras
+pip install -e ".[dev,all]"
 # 修改app.py中相关的配置信息,然后启动
-poetry run python example/executor_app.py
+python example/executor_app.py
 ```
