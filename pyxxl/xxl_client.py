@@ -47,6 +47,7 @@ class XXL:
             session = aiohttp.ClientSession(
                 base_url=_admin_url.origin(),
                 connector=self.conn,
+                trust_env=True,
             )
 
         self.session = session
