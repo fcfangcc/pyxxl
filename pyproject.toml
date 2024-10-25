@@ -6,8 +6,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 version = "0.3.7"
 classifiers = [
+  "Framework :: AsyncIO",
   "Topic :: Software Development",
-  "Libraries :: Python Modules",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Operating System :: POSIX :: Linux",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
