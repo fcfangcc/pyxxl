@@ -2,16 +2,14 @@ import logging
 import os
 import time
 from contextlib import asynccontextmanager
-from logging import FileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, List, Optional
 
 import aiofiles
 
 from pyxxl.types import LogRequest, LogResponse
-from pyxxl.utils import STD_FORMATTER
 
-from .common import LogBase
+from .common import TASK_FORMATTER, LogBase, PyxxlFileHandler, PyxxlStreamHandler
 
 if TYPE_CHECKING:
     from logging import Handler
@@ -39,10 +37,10 @@ class DiskLog(LogBase):
         logger = logging.getLogger("pyxxl-task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
-        handlers: list[Handler] = [logging.StreamHandler()] if stdout else []
-        handlers.append(FileHandler(self.key(log_id), delay=True))
+        handlers: list[Handler] = [PyxxlStreamHandler()] if stdout else []
+        handlers.append(PyxxlFileHandler(self.key(log_id), delay=True))
         for h in handlers:
-            h.setFormatter(STD_FORMATTER)
+            h.setFormatter(TASK_FORMATTER)
             h.setLevel(level)
             logger.addHandler(h)
         return logger

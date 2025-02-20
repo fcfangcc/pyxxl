@@ -1,7 +1,7 @@
 import logging
 import threading
 from contextvars import ContextVar, Token
-from typing import Any, Optional
+from typing import Optional
 
 from pyxxl.schema import RunData
 
@@ -16,7 +16,7 @@ class GlobalVars:
         cls._DATA.set(data)
 
     @classmethod
-    def try_get_data(cls) -> Optional[Any]:
+    def try_get_run_data(cls) -> Optional[RunData]:
         return cls._DATA.get(None)
 
     @property

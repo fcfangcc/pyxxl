@@ -3,12 +3,19 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, AsyncContextManager, Optional
 
+from pyxxl.ctx import g
 from pyxxl.types import LogRequest, LogResponse
 
 logger = logging.getLogger(__name__)
 
 
 MAX_LOG_TAIL_LINES = 1000
+TASK_FORMAT = (
+    "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "
+    "%(levelname)s %(pathname)s(%(funcName)s:%(lineno)d) - %(message)s"
+)
+TASKDATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+TASK_FORMATTER = logging.Formatter(TASK_FORMAT, datefmt=TASKDATE_FORMAT)
 
 
 class LogBase(ABC):
@@ -45,3 +52,17 @@ class LogBase(ABC):
 
     def after_running(self, logger: logging.Logger) -> None:
         return None
+
+
+class PyxxlFileHandler(logging.FileHandler):
+    def emit(self, record: Any) -> None:
+        xxl_kwargs = g.try_get_run_data()
+        record.logId = xxl_kwargs.logId if xxl_kwargs else "NotInTask"
+        return super().emit(record)
+
+
+class PyxxlStreamHandler(logging.StreamHandler):
+    def emit(self, record: Any) -> None:
+        xxl_kwargs = g.try_get_run_data()
+        record.logId = xxl_kwargs.logId if xxl_kwargs else "NotInTask"
+        return super().emit(record)

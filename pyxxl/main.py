@@ -35,6 +35,7 @@ async def server_info_ctx(app: web.Application) -> AsyncGenerator:
 
 class PyxxlRunner:
     daemon: Optional[Process] = None
+    _logging_setup: bool = False
 
     def __init__(
         self,
@@ -62,8 +63,7 @@ class PyxxlRunner:
 
         self.handler = handler or JobHandler()
         self.config = config
-        log_level = logging.DEBUG if self.config.debug else logging.INFO
-        setup_logging(self.config.executor_log_path, "pyxxl", level=log_level)
+        self.log_level = logging.DEBUG if self.config.debug else logging.INFO
 
     async def _register_task(self, xxl_client: XXL) -> None:
         # todo: 这是个调度器的bug，必须循环去注册，不然会显示为离线
@@ -127,8 +127,13 @@ class PyxxlRunner:
         app.cleanup_ctx.append(server_info_ctx)
         return app
 
+    def _setup_logging(self) -> None:
+        if not self._logging_setup:
+            setup_logging(self.config.executor_log_path, "pyxxl", level=self.log_level)
+
     def run_executor(self, handle_signals: bool = True) -> None:
         """用aiohttp的web服务器启动执行器"""
+        self._setup_logging()
         web.run_app(
             self.create_server_app(),
             port=self.config.executor_listen_port,

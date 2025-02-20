@@ -135,6 +135,9 @@ def sync_loop_demo2():
 ./init_dev_env.sh
 ```
 
+http://127.0.0.1:8080/xxl-job-admin/
+
+admin/123456
 
 ### 启动执行器
 

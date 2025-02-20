@@ -3,10 +3,11 @@ import time
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional, Union
 
+from pyxxl.ctx import g
 from pyxxl.types import LogRequest, LogResponse
-from pyxxl.utils import STD_FORMATTER, try_import
+from pyxxl.utils import try_import
 
-from .common import MAX_LOG_TAIL_LINES, LogBase
+from .common import MAX_LOG_TAIL_LINES, TASK_FORMATTER, LogBase, PyxxlStreamHandler
 
 if TYPE_CHECKING:
     from logging import Handler
@@ -37,6 +38,8 @@ class RedisHandler(logging.Handler):
 
     def emit(self, record: Any) -> None:
         try:
+            xxl_kwargs = g.try_get_run_data()
+            record.logId = xxl_kwargs.logId if xxl_kwargs else "NotInTask"
             p = self.rclient.pipeline()
             p.rpush(self.key, self.format(record))
             p.ltrim(self.key, -self.max_lines, -1)
@@ -74,10 +77,10 @@ class RedisLog(LogBase):
         logger = logging.getLogger("pyxxl-task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
-        handlers: list[Handler] = [logging.StreamHandler()] if stdout else []
+        handlers: list[Handler] = [PyxxlStreamHandler()] if stdout else []
         handlers.append(RedisHandler(self.key(log_id), self.expired_days * 3600 * 24, self.rclient))
         for h in handlers:
-            h.setFormatter(STD_FORMATTER)
+            h.setFormatter(TASK_FORMATTER)
             h.setLevel(level)
             logger.addHandler(h)
         return logger

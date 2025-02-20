@@ -5,11 +5,8 @@ import socket
 from logging.handlers import RotatingFileHandler
 from typing import Any, List, Optional
 
-from pyxxl.ctx import g
-
 DEFAULT_FORMAT = (
-    "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "
-    "%(levelname)s %(pathname)s(%(funcName)s:%(lineno)d) - %(message)s"
+    "%(asctime)s.%(msecs)03d [%(threadName)s] %(levelname)s %(pathname)s(%(funcName)s:%(lineno)d) - %(message)s"
 )
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 STD_FORMATTER = logging.Formatter(DEFAULT_FORMAT, datefmt=DATE_FORMAT)
@@ -26,18 +23,6 @@ def get_network_ip() -> str:
     return ipaddrlist[0]
 
 
-def _init_log_record_factory() -> None:
-    old_factory = logging.getLogRecordFactory()
-
-    def _record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
-        record: Any = old_factory(*args, **kwargs)
-        xxl_kwargs = g.try_get_data()
-        record.logId = xxl_kwargs.logId if xxl_kwargs else "NotInTask"
-        return record
-
-    logging.setLogRecordFactory(_record_factory)
-
-
 def setup_logging(
     path: str,
     name: str,
@@ -50,8 +35,6 @@ def setup_logging(
         return logger
 
     std_formatter = std_formatter or STD_FORMATTER
-
-    _init_log_record_factory()
 
     logger.setLevel(level)
     logger.propagate = False
