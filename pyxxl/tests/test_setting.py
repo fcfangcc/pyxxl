@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 
 import pytest
 
@@ -14,7 +15,17 @@ def test_config():
         executor_app_name="test",
         dotenv_try=False,
     )
-    assert setting.executor_host == get_network_ip()
+    assert urlparse(setting.executor_url).hostname == get_network_ip()
+    assert setting.executor_app_name == "test"
+
+    setting = ExecutorConfig(
+        xxl_admin_baseurl=TEST_ADMIN_URL,
+        executor_app_name="test",
+        executor_url="http://127.0.0.1",
+        dotenv_try=False,
+    )
+    assert setting.executor_listen_port == 80
+    assert setting.executor_listen_host == "127.0.0.1"
     assert setting.executor_app_name == "test"
 
     # from env

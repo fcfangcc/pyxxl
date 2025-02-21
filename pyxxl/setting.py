@@ -3,12 +3,15 @@ import logging
 import os
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal, Optional, get_origin
-
-from yarl import URL
+from urllib.parse import urlparse
 
 from pyxxl.utils import get_network_ip, setup_logging
 
 logger = logging.getLogger(__name__)
+
+
+def _default_executor_url() -> str:
+    return "http://{}:9999".format(get_network_ip())
 
 
 @dataclass
@@ -33,26 +36,23 @@ class ExecutorConfig:
 
     executor_log_path: str = "pyxxl.log"
     """执行器日志输出的路径(注意路径必须存在). Default: pyxxl.log"""
-    executor_port: int = 9999
-    """执行器绑定的http服务的端口,作用同host. Default: 9999"""
-    executor_host: str = field(default_factory=get_network_ip)
+    executor_url: str = field(default_factory=_default_executor_url)
     """
-    执行器绑定的host,xxl-admin通过这个host来回调pyxxl执行器,如果不填会默认取第一个网卡的地址.
-    Default: 获取到第一个网卡的ip地址
+    执行器绑定的http服务的url,xxl-admin通过这个host来回调pyxxl执行器.
+    Default: "http://{第一个网卡的ip地址}:9999"
     """
     executor_listen_port: int = 0
-    """Default: executor_port"""
+    """Default: executor_url中解析的port"""
     executor_listen_host: str = ""
     """
-    执行器HTTP服务绑定的HOST,大部分情况下不需要设置. Default: executor_host
+    执行器HTTP服务绑定的HOST,大部分情况下不需要设置. Default: executor_url中解析的host
 
-    当执行器通过了端口转发暴露给admin的时候,需要把executor_host填写为直连admin的地址.
+    当执行器通过了端口转发暴露给admin的时候,需要把executor_url填写为直连admin的地址.
 
     列如调用路径为 xxl-admin -> nginx_ip_or_domain:80 -> executor:9999
     这个时候需要配置为
 
-        executor_port=80
-        executor_host=nginx_ip_or_domain
+        executor_url="http://nginx_ip_or_domain:80"
         executor_listen_port=9999
         executor_listen_host="0.0.0.0"
 
@@ -94,11 +94,16 @@ class ExecutorConfig:
         self._valid_executor_app_name()
         self._valid_logger_target()
 
+        executor_url_parse = urlparse(self.executor_url)
+        assert executor_url_parse.hostname, "executor_url must have hostname"
         if not self.executor_listen_host:
-            self.executor_listen_host = self.executor_host
+            self.executor_listen_host = executor_url_parse.hostname
 
         if not self.executor_listen_port:
-            self.executor_listen_port = self.executor_port
+            if not executor_url_parse.port:
+                self.executor_listen_port = 443 if executor_url_parse.scheme == "https" else 80
+            else:
+                self.executor_listen_port = executor_url_parse.port
 
         logger.debug("init config: %s", asdict(self))
 
@@ -113,7 +118,7 @@ class ExecutorConfig:
         for param in inspect.signature(ExecutorConfig).parameters.values():
             env_val = os.getenv(param.name) or os.getenv(param.name.upper())
             if env_val is not None:
-                logger.debug("Get [%s] config from env." % (param.name))
+                logger.info("Get [%s] config from env." % (param.name))
                 real_value: Any = env_val
                 if param.annotation is bool:
                     real_value = env_val in ["true", "True"]
@@ -122,7 +127,7 @@ class ExecutorConfig:
                 setattr(self, param.name, real_value)
 
     def _valid_xxl_admin_baseurl(self) -> None:
-        _admin_url: URL = URL(self.xxl_admin_baseurl)
+        _admin_url = urlparse(self.xxl_admin_baseurl)
         if not (_admin_url.scheme.startswith("http") and _admin_url.path.endswith("/")):
             raise ValueError("admin_url must like http://localhost:8080/xxl-job-admin/api/")
 
@@ -140,4 +145,4 @@ class ExecutorConfig:
     @property
     def executor_baseurl(self) -> str:
         """暴露给xxl-admin的地址"""
-        return "http://{host}:{port}".format(host=self.executor_host, port=self.executor_port)
+        return self.executor_url
