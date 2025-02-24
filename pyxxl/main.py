@@ -1,36 +1,45 @@
 import asyncio
-import functools
 import logging
 import os
 from multiprocessing import Process
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, NamedTuple, Optional
 
 from aiohttp import web
 
-from pyxxl.executor import Executor, JobHandler
+from pyxxl import executor
 from pyxxl.logger import DiskLog, LogBase, RedisLog
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
 from pyxxl.utils import setup_logging, try_import
 from pyxxl.xxl_client import XXL
 
-logger = logging.getLogger(__name__)
-
 if try_import("prometheus_client"):
     from pyxxl import prometheus
 
-    Executor: Executor = functools.partial(  # type: ignore[no-redef]
-        Executor,
-        successed_callback=prometheus.success,
-        failed_callback=prometheus.failed,
-    )
+    class Executor(executor.Executor):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self._successed_callback = prometheus.success
+            self._failed_callback = prometheus.failed
+
+else:
+
+    class Executor(executor.Executor): ...  # type: ignore[no-redef]
 
 
 async def server_info_ctx(app: web.Application) -> AsyncGenerator:
     pid = os.getpid()
-    logger.info(f"start executor server with pid {pid}.")
+    state: State = app["pyxxl_state"]
+    state.executor_logger.info(f"start executor server with pid {pid}.")
     yield
-    logger.info(f"stop executor server. pid={pid}.")
+    state.executor_logger.info(f"stop executor server. pid={pid}.")
+
+
+class State(NamedTuple):
+    xxl_client: XXL
+    executor: Executor
+    task_log: LogBase
+    executor_logger: logging.Logger
 
 
 class PyxxlRunner:
@@ -40,7 +49,7 @@ class PyxxlRunner:
     def __init__(
         self,
         config: ExecutorConfig,
-        handler: Optional[JobHandler] = None,
+        handler: Optional[executor.JobHandler] = None,
     ):
         """
         !!! example
@@ -61,7 +70,7 @@ class PyxxlRunner:
             handler (JobHandler, optional): 执行器支持的job,没有预先定义的job名称也会执行失败
         """
 
-        self.handler = handler or JobHandler()
+        self.handler = handler or executor.JobHandler(logger=config.executor_logger)
         self.config = config
         self.log_level = logging.DEBUG if self.config.debug else logging.INFO
 
@@ -73,52 +82,65 @@ class PyxxlRunner:
                 await xxl_client.registry(self.config.executor_app_name, self.config.executor_baseurl)
                 await asyncio.sleep(10)
         finally:
-            logger.warning("Register task is exit.")
+            self.config.executor_logger.warning("Register task is exit.")
 
     def _get_xxl_clint(self) -> XXL:
         """for moke"""
-        return XXL(self.config.xxl_admin_baseurl, token=self.config.access_token)
+        return XXL(self.config.xxl_admin_baseurl, token=self.config.access_token, logger=self.config.executor_logger)
 
     def _get_log(self) -> LogBase:
         if self.config.log_target == "disk":
-            return DiskLog(log_path=self.config.log_local_dir, expired_days=self.config.log_expired_days)
+            return DiskLog(
+                log_path=self.config.log_local_dir,
+                expired_days=self.config.log_expired_days,
+                logger=self.config.executor_logger,
+            )
 
         if self.config.log_target == "redis":
             return RedisLog(
-                self.config.executor_app_name, self.config.log_redis_uri, expired_days=self.config.log_expired_days
+                self.config.executor_app_name,
+                self.config.log_redis_uri,
+                expired_days=self.config.log_expired_days,
+                logger=self.config.executor_logger,
             )
 
         raise NotImplementedError
 
     async def _cleanup_ctx(self, app: web.Application) -> AsyncGenerator:
-        # setup task log
-        executor_log = self._get_log()
-        executor_log_task = asyncio.create_task(executor_log.expired_loop(), name="log_task")
-
+        task_log = self._get_log()
         xxl_client = self._get_xxl_clint()
-        executor = Executor(xxl_client, config=self.config, handler=self.handler, logger_factory=executor_log)
-        register_task = asyncio.create_task(self._register_task(xxl_client), name="register_task")
+        executor = Executor(
+            xxl_client,
+            config=self.config,
+            handler=self.handler,
+            logger_factory=task_log,
+        )
 
-        app["xxl_client"] = xxl_client
-        app["executor"] = executor
-        app["executor_log"] = executor_log
-
-        if executor.handler:
-            logger.info("register with handlers %s", list(executor.handler.handlers_info()))
+        state = State(
+            xxl_client=xxl_client,
+            executor=executor,
+            task_log=task_log,
+            executor_logger=self.config.executor_logger,
+        )
+        app["pyxxl_state"] = state
+        executor_log_task = asyncio.create_task(state.task_log.expired_loop(), name="log_task")
+        register_task = asyncio.create_task(self._register_task(state.xxl_client), name="register_task")
+        if state.executor.handler:
+            state.executor_logger.info("register with handlers %s", list(executor.handler.handlers_info()))
         else:
-            logger.warning("register with handlers is empty")  # pragma: no cover
+            state.executor_logger.warning("register with handlers is empty")  # pragma: no cover
 
         yield
 
         register_task.cancel()
         executor_log_task.cancel()
-        await xxl_client.registryRemove(self.config.executor_app_name, self.config.executor_baseurl)
+        await state.xxl_client.registryRemove(self.config.executor_app_name, self.config.executor_baseurl)
         if self.config.graceful_close:
-            await executor.graceful_close(self.config.graceful_timeout)
+            await state.executor.graceful_close(self.config.graceful_timeout)
         else:
-            await executor.shutdown()
-        await xxl_client.close()
-        logger.info("cleanup executor success.")
+            await state.executor.shutdown()
+        await state.xxl_client.close()
+        state.executor_logger.info("cleanup executor success.")
 
     def create_server_app(self) -> web.Application:
         """获取执行器的app对象,可以使用自己喜欢的服务器启动这个webapp"""

@@ -39,6 +39,7 @@ def test_task4():
     g.logger.info("Job %s get executor params: %s" % (g.xxl_run_data.jobId, g.xxl_run_data.executorParams))
     # 如果同步任务里面有循环，为了支持cancel操作，必须每次都判断g.cancel_event.
     while n <= 10 and not g.cancel_event.is_set():
+        # 如果不需要从xxl-admin中查看日志，可以用自己的logger
         g.logger.info(
             "log to {} logger test_task4.{},params:{}".format(
                 g.xxl_run_data.jobId,

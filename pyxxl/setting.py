@@ -5,9 +5,8 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Literal, Optional, get_origin
 from urllib.parse import urlparse
 
+from pyxxl.log import executor_logger, setting_logger
 from pyxxl.utils import get_network_ip, setup_logging
-
-logger = logging.getLogger(__name__)
 
 
 def _default_executor_url() -> str:
@@ -34,8 +33,6 @@ class ExecutorConfig:
     access_token: Optional[str] = None
     """调度器的token. Default: None"""
 
-    executor_log_path: str = "pyxxl.log"
-    """执行器日志输出的路径(注意路径必须存在). Default: pyxxl.log"""
     executor_url: str = field(default_factory=_default_executor_url)
     """
     执行器绑定的http服务的url,xxl-admin通过这个host来回调pyxxl执行器.
@@ -57,6 +54,13 @@ class ExecutorConfig:
         executor_listen_host="0.0.0.0"
 
     """
+    executor_log_path: str = "pyxxl.log"
+    """executor日志输出的路径(注意路径必须存在). Default: pyxxl.log"""
+    executor_logger: logging.Logger = field(default=None)  # type: ignore  # noqa: PGH003
+    """
+    executor_logger的实例,用于打印executor相关的日志.
+    由于task的日志需要能展示在xxl-admin上,所以暂时无法定制.
+    """
 
     max_workers: int = 30
     """执行器线程池（执行同步任务时使用）. Default: 30"""
@@ -70,13 +74,13 @@ class ExecutorConfig:
     """优雅关闭的等待时间,超过改时间强制停止任务. Default: 60 * 5"""
 
     log_target: Literal["disk", "redis"] = "disk"
-    """任务日志存储的地方.  Default: disk"""
+    """task任务日志存储的地方.  Default: disk"""
     log_local_dir: str = "logs"
-    """任务日志存储的本地目录,默认为当前目录logs文件夹"""
+    """task任务日志存储的本地目录,默认为当前目录logs文件夹"""
     log_redis_uri: str = ""
-    """任务日志存储到redis的连接地址"""
+    """task任务日志存储到redis的连接地址"""
     log_expired_days: int = 14
-    """任务日志存储的本地的过期天数. Default: 14"""
+    """task任务日志存储的本地的过期天数. Default: 14"""
 
     dotenv_try: bool = True
     dotenv_path: Optional[str] = None
@@ -84,9 +88,7 @@ class ExecutorConfig:
     debug: bool = False
 
     def __post_init__(self) -> None:
-        if self.debug:
-            setup_logging(self.executor_log_path, __name__, level=logging.DEBUG)
-
+        setup_logging(self.executor_log_path, __name__, level=logging.DEBUG)
         if self.dotenv_try:
             self._try_load_from_dotenv()
 
@@ -105,7 +107,14 @@ class ExecutorConfig:
             else:
                 self.executor_listen_port = executor_url_parse.port
 
-        logger.debug("init config: %s", asdict(self))
+        if self.executor_logger is None:
+            self.executor_logger = executor_logger
+            setup_logging(
+                self.executor_log_path,
+                executor_logger.name,
+                level=logging.DEBUG if self.debug else logging.INFO,
+            )
+        setting_logger.debug("init config: %s", asdict(self))
 
     def _try_load_from_dotenv(self) -> None:
         try:
@@ -118,7 +127,7 @@ class ExecutorConfig:
         for param in inspect.signature(ExecutorConfig).parameters.values():
             env_val = os.getenv(param.name) or os.getenv(param.name.upper())
             if env_val is not None:
-                logger.info("Get [%s] config from env." % (param.name))
+                setting_logger.info("Get [%s] config from env." % (param.name))
                 real_value: Any = env_val
                 if param.annotation is bool:
                     real_value = env_val in ["true", "True"]

@@ -55,7 +55,7 @@ async def metrics(request: web.Request) -> web.Response:
     QUEUE_TASKS_INFO.clear()
     ASYNCIO_TASKS_TOTAL.set(len(asyncio.all_tasks()))
     # export executor info
-    executor: Executor = request.app["executor"]
+    executor: Executor = request.app["pyxxl_state"].executor
     RUNNING_TASKS.set(len(executor.tasks))
 
     for k, v in executor.tasks.items():

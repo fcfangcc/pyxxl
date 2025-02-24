@@ -13,13 +13,13 @@ from typing import Any, Callable, Dict, List, MutableSet, Optional
 from pyxxl import error
 from pyxxl.ctx import g
 from pyxxl.enum import executorBlockStrategy
+from pyxxl.log import executor_logger
 from pyxxl.logger import DiskLog, LogBase, new_logger
 from pyxxl.schema import RunData
 from pyxxl.setting import ExecutorConfig
 from pyxxl.types import DecoratedCallable
 from pyxxl.xxl_client import XXL
 
-logger = logging.getLogger(__name__)
 # https://docs.python.org/3.10/library/asyncio-task.html#asyncio.create_task
 _BACKGROUND_TASKS: MutableSet[asyncio.Task] = set()
 
@@ -51,7 +51,7 @@ class HandlerInfo:
             return await asyncio.wait_for(asyncio.to_thread(self.handler), timeout=timeout)
         except (asyncio.exceptions.TimeoutError, asyncio.CancelledError) as e:
             event.set()
-            logger.debug("Get error for sync task {}".format(self))
+            # logger.debug("Get error for sync task {}".format(self))
             raise e
 
 
@@ -69,8 +69,9 @@ class XXLTask:
 
 
 class JobHandler:
-    def __init__(self) -> None:
+    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         self._handlers: Dict[str, HandlerInfo] = {}
+        self.logger = logger or executor_logger
 
     def register(
         self, *args: Any, name: Optional[str] = None, replace: bool = False
@@ -89,7 +90,7 @@ class JobHandler:
                     stacklevel=2,
                 )
             self._handlers[handler_name] = handler
-            logger.debug("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
+            self.logger.debug("register job %s,is async: %s" % (handler_name, asyncio.iscoroutinefunction(func)))
 
             return func
 
@@ -145,10 +146,14 @@ class Executor:
         self.failed_callback = failed_callback or (lambda x: 1)
         self.loop.set_default_executor(self.thread_pool)
 
+    @property
+    def executor_logger(self) -> logging.Logger:
+        return self.config.executor_logger
+
     async def run_job(self, data: RunData) -> str:
         handler_obj = self.handler.get(data.executorHandler)
         if not handler_obj:
-            logger.warning("handler %s not found." % data.executorHandler)
+            self.executor_logger.warning("handler %s not found." % data.executorHandler)
             raise error.JobNotFoundError("handler %s not found." % data.executorHandler)
 
         # 一个执行器同时只能执行一个jobId相同的任务
@@ -158,7 +163,7 @@ class Executor:
                 self.tasks[data.jobId] = XXLTask(self.loop.create_task(self._run(data)), data)
                 return "Running"
 
-            logger.warning("jobId {} is running. current_task={}".format(data.jobId, current_task))
+            self.executor_logger.warning("jobId {} is running. current_task={}".format(data.jobId, current_task))
             # pylint: disable=no-else-raise
             if data.executorBlockStrategy == executorBlockStrategy.DISCARD_LATER.value:
                 raise error.JobDuplicateError(
@@ -166,7 +171,7 @@ class Executor:
                 )
             elif data.executorBlockStrategy == executorBlockStrategy.COVER_EARLY.value:
                 msg = "Job {} BlockStrategy is COVER_EARLY, logId {} replaced.".format(data.jobId, data.logId)
-                logger.warning(msg)
+                self.executor_logger.warning(msg)
                 spawn_task(self.loop.create_task(self.cancel_job(data.jobId, include_queue=False)))
                 await self.get_queue(data.jobId).put(data)
                 return msg
@@ -176,13 +181,13 @@ class Executor:
                     msg = "Job {job_id} is  SERIAL, queue length more than {maxsize}." "Job {job}  discard!".format(
                         job_id=data.jobId, job=data, maxsize=queue.maxsize
                     )
-                    logger.error(msg)
+                    self.executor_logger.error(msg)
                     raise error.JobDuplicateError(msg)
                 else:
                     msg = "job {job_id} is in queen, logId {log_id} ranked {ranked}th [max={maxsize}]...".format(
                         job_id=data.jobId, log_id=data.logId, ranked=queue.qsize() + 1, maxsize=queue.maxsize
                     )
-                    logger.info(msg)
+                    self.executor_logger.info(msg)
                     await queue.put(data)
                     return msg
             else:
@@ -192,7 +197,7 @@ class Executor:
                 )
 
     async def cancel_job(self, job_id: int, include_queue: bool = True) -> None:
-        logger.warning("start kill job: job_id={}".format(job_id))
+        self.executor_logger.warning("start kill job: job_id={}".format(job_id))
         await asyncio.sleep(0.01)  # sleep for pytest
 
         async with self.lock:
@@ -200,7 +205,7 @@ class Executor:
                 queue = self.get_queue(job_id)
                 while not queue.empty():
                     data = queue.get_nowait()
-                    logger.warning("Discard jobId {} from queue,data: {}".format(job_id, data))
+                    self.executor_logger.warning("Discard jobId {} from queue,data: {}".format(job_id, data))
 
             task = self.tasks.get(job_id, None)
             if task:
@@ -209,7 +214,7 @@ class Executor:
                 try:
                     await task.task
                 except asyncio.CancelledError:
-                    logger.warning("Job %s cancelled." % job_id)
+                    self.executor_logger.warning("Job %s cancelled." % job_id)
 
     async def is_running(self, job_id: int) -> bool:
         return job_id in self.tasks
@@ -251,11 +256,11 @@ class Executor:
     async def _finish(self, job_id: int) -> None:
         # 所有移除tasks的操作全部在这里执行
         finish_task = self.tasks.pop(job_id, None)
-        logger.info("Finish task {}".format(finish_task))
+        self.executor_logger.info("Finish task {}".format(finish_task))
         queue = self.get_queue(job_id)
         if not queue.empty():
             data = queue.get_nowait()
-            logger.info(
+            self.executor_logger.info(
                 "Get data from queue jobId={}, after queueSize={}, data={}".format(job_id, queue.qsize(), data)
             )
             self.tasks[job_id] = XXLTask(self.loop.create_task(self._run(data)), data)

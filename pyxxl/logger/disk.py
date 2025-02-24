@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, List, Optional
 
 import aiofiles
 
+from pyxxl.log import executor_logger
 from pyxxl.types import LogRequest, LogResponse
 
 from .common import TASK_FORMATTER, LogBase, PyxxlFileHandler, PyxxlStreamHandler
@@ -18,15 +19,21 @@ if TYPE_CHECKING:
 LOG_NAME_PREFIX = "pyxxl-{log_id}.log"
 LOG_NAME_REGEX = "pyxxl-*.log"
 MAX_LOG_TAIL_LINES = 1000
-logger = logging.getLogger(__name__)
 
 
 class DiskLog(LogBase):
-    def __init__(self, log_path: str, log_tail_lines: int = 0, expired_days: int = 14) -> None:
+    def __init__(
+        self,
+        log_path: str,
+        log_tail_lines: int = 0,
+        expired_days: int = 14,
+        logger: Optional[logging.Logger] = None,
+    ) -> None:
         self.log_path = Path(log_path)
+        self.executor_logger = logger or executor_logger
         if not self.log_path.exists():
             self.log_path.mkdir()  # pragma: no cover
-            logger.info("create logdir %s" % self.log_path)  # pragma: no cover
+            self.executor_logger.info("create logdir %s" % self.log_path)  # pragma: no cover
         self.log_tail_lines = log_tail_lines or MAX_LOG_TAIL_LINES
         self.expired_days = expired_days
 
@@ -34,7 +41,7 @@ class DiskLog(LogBase):
         return self.log_path.joinpath(LOG_NAME_PREFIX.format(log_id=log_id)).absolute().as_posix()
 
     def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger:
-        logger = logging.getLogger("pyxxl-task-{%s}" % log_id)
+        logger = logging.getLogger("pyxxl.task_log.disk.task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
         handlers: list[Handler] = [PyxxlStreamHandler()] if stdout else []
@@ -62,7 +69,7 @@ class DiskLog(LogBase):
                         to_line_num = i
                         logs += log
         except FileNotFoundError as e:
-            logger.warning(str(e), exc_info=True)
+            self.executor_logger.warning(str(e), exc_info=True)
             logs = "No such logid logs."
 
         return LogResponse(
@@ -88,7 +95,9 @@ class DiskLog(LogBase):
                     del_list.append(sub_path)
 
         if del_list:
-            logger.info("delete expired logs [{}] - {}".format(len(del_list), " | ".join(str(i) for i in del_list)))
+            self.executor_logger.info(
+                "delete expired logs [{}] - {}".format(len(del_list), " | ".join(str(i) for i in del_list))
+            )
             for i in del_list:
                 i.unlink()
 

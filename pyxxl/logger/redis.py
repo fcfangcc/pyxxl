@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional, Union
 
 from pyxxl.ctx import g
+from pyxxl.log import executor_logger
 from pyxxl.types import LogRequest, LogResponse
 from pyxxl.utils import try_import
 
@@ -56,10 +57,11 @@ class RedisLog(LogBase):
         redis_client: Union[str, "redis.ConnectionPool"],
         log_tail_lines: int = 0,
         expired_days: int = 14,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         if redis is None:
             raise ImportError("Depend on redis. pip install redis or pip install pyxxl[redis].")  # pragma: no cover
-
+        self.executor_logger = logger or executor_logger
         self.app = app
         self.log_tail_lines = log_tail_lines or MAX_LOG_TAIL_LINES
         self.expired_days = expired_days
@@ -74,7 +76,7 @@ class RedisLog(LogBase):
         self.rclient = rclient
 
     def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger:
-        logger = logging.getLogger("pyxxl-task-{%s}" % log_id)
+        logger = logging.getLogger("pyxxl.task_log.redis.task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
         handlers: list[Handler] = [PyxxlStreamHandler()] if stdout else []

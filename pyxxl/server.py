@@ -4,20 +4,28 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 
 from pyxxl import error
+from pyxxl.executor import Executor
 from pyxxl.schema import RunData
 from pyxxl.utils import try_import
 
 if TYPE_CHECKING:
     from pyxxl.logger import LogBase
 
-logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
 
+def app_logger(request: web.Request) -> logging.Logger:
+    return request.app["pyxxl_state"].executor_logger
+
+
+def app_executor(request: web.Request) -> Executor:
+    return request.app["pyxxl_state"].executor
+
+
 @routes.post("/beat")
 async def beat(request: web.Request) -> web.Response:
-    logger.debug("beat")
+    app_logger(request).debug("beat")
     return web.json_response(dict(code=200, msg=None))
 
 
@@ -25,8 +33,8 @@ async def beat(request: web.Request) -> web.Response:
 async def idle_beat(request: web.Request) -> web.Response:
     data = await request.json()
     job_id = data["jobId"]
-    logger.debug("idleBeat: %s" % data)
-    if await request.app["executor"].is_running(data["jobId"]):
+    app_logger(request).debug("idleBeat: %s" % data)
+    if await app_executor(request).is_running(data["jobId"]):
         return web.json_response(dict(code=500, msg="job %s is running." % job_id))
     return web.json_response(dict(code=200, msg=None))
 
@@ -51,10 +59,10 @@ async def run(request: web.Request) -> web.Response:
     """
     data = await request.json()
     run_data = RunData.from_dict(data)
-    logger.info("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
+    app_logger(request).info("Get task request. jobId=%s logId=%s [%s]" % (run_data.jobId, run_data.logId, run_data))
     msg = None
     try:
-        msg = await request.app["executor"].run_job(run_data)
+        msg = await app_executor(request).run_job(run_data)
     except error.JobDuplicateError as e:
         return web.json_response(dict(code=500, msg=e.message))
     except error.JobNotFoundError as e:
@@ -66,7 +74,7 @@ async def run(request: web.Request) -> web.Response:
 @routes.post("/kill")
 async def kill(request: web.Request) -> web.Response:
     data = await request.json()
-    await request.app["executor"].cancel_job(data["jobId"], include_queue=True)
+    await app_executor(request).cancel_job(data["jobId"], include_queue=True)
     return web.json_response(dict(code=200, msg=None))
 
 
@@ -80,12 +88,12 @@ async def log(request: web.Request) -> web.Response:
     }
     """
     data = await request.json()
-    logger.debug("get log request %s" % data)
-    executor_log: LogBase = request.app["executor_log"]
+    app_logger(request).debug("get log request %s" % data)
+    task_log: LogBase = request.app["pyxxl_state"].task_log
     response = {
         "code": 200,
         "msg": None,
-        "content": await executor_log.get_logs(data),
+        "content": await task_log.get_logs(data),
     }
     return web.json_response(response)
 

@@ -4,7 +4,7 @@ authors = [{ name = "fcfangcc", email = "swjfc22@live.com" }]
 description = "A Python executor for XXL-jobs"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "0.4.0"
+version = "0.4.0a1"
 classifiers = [
   "Framework :: AsyncIO",
   "Topic :: Software Development",
@@ -36,7 +36,7 @@ dev = [
   "mypy~=1.8.0",
   "pre-commit~=3.6.0",
   "pytest==7.1",
-  "pytest-aiohttp==1.0.4",
+  "pytest-aiohttp==1.1.0",
   "pytest-asyncio==0.18.3",
   "pytest-cov==3.0.0",
   "ruff<=1",

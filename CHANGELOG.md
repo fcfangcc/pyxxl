@@ -1,3 +1,7 @@
+### 0.4.0
+* 配置移除 **executor_host** **executor_port** 使用 **executor_url** 替代
+* 配置新增 **executor_logger**, 用于传入自定义logger[目前只能覆盖executor的日志]
+
 ### 0.3.4
 * **executor_server_host** 修改为 **executor_listen_host**
 * 新增配置 **executor_listen_port**

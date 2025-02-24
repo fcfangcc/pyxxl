@@ -6,9 +6,6 @@ from typing import Any, AsyncContextManager, Optional
 from pyxxl.ctx import g
 from pyxxl.types import LogRequest, LogResponse
 
-logger = logging.getLogger(__name__)
-
-
 MAX_LOG_TAIL_LINES = 1000
 TASK_FORMAT = (
     "%(asctime)s.%(msecs)03d [%(threadName)s] [%(logId)s] "
@@ -19,6 +16,8 @@ TASK_FORMATTER = logging.Formatter(TASK_FORMAT, datefmt=TASKDATE_FORMAT)
 
 
 class LogBase(ABC):
+    executor_logger: logging.Logger
+
     @abstractmethod
     def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger: ...
 
@@ -45,7 +44,7 @@ class LogBase(ABC):
         Args:
             seconds (int, optional): one loop seconds. Defaults to 3600.
         """
-        logger.debug("start expired_loop...")
+        self.executor_logger.debug("start expired_loop...")
         while True:
             await self.expired_once()
             await asyncio.sleep(seconds)

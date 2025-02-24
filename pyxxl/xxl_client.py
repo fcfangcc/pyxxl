@@ -6,8 +6,7 @@ import aiohttp
 from yarl import URL
 
 from pyxxl.error import XXLClientError, XXLRegisterError
-
-logger = logging.getLogger(__name__)
+from pyxxl.log import xxl_client_logger
 
 JsonType = Union[None, int, str, bool, List[Any], Dict[Any, Any]]
 
@@ -31,6 +30,7 @@ class XXL:
         retry_times: int = 1,
         retry_interval: int = 5,
         session: Optional[aiohttp.ClientSession] = None,
+        logger: Optional[logging.Logger] = None,
         **kwargs: Any,
     ) -> None:
         self.loop = loop or asyncio.get_event_loop()
@@ -55,6 +55,7 @@ class XXL:
         self.retry_times = retry_times
         self.retry_interval = retry_interval
         self.headers = {"XXL-JOB-ACCESS-TOKEN": token} if token else {}
+        self.logger = logger or xxl_client_logger
 
     async def registry(self, key: str, value: str) -> bool:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
@@ -62,13 +63,13 @@ class XXL:
             await self._post("registry", payload, retry_times=5)
             return True
         except (XXLRegisterError, XXLClientError) as e:
-            logger.error("Registry executor failed. %s", e.message)
+            self.logger.error("Registry executor failed. %s", e.message)
         return False
 
     async def registryRemove(self, key: str, value: str) -> None:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
         await self._post("registryRemove", payload, retry_times=3)
-        logger.info("RegistryRemove successful. %s" % payload)
+        self.logger.info("RegistryRemove successful. %s" % payload)
 
     async def callback(self, log_id: int, timestamp: int, code: int = 200, msg: Optional[str] = None) -> None:
         # executeResult兼容xxl-job2.2版本
@@ -82,10 +83,10 @@ class XXL:
             }
         ]
         await self._post("callback", payload)
-        logger.debug("Callback successful. %s" % payload)
+        self.logger.debug("Callback successful. %s" % payload)
 
     async def _post(self, path: str, payload: JsonType, retry_times: Optional[int] = None) -> Response:
-        logger.debug("post to xxl-job path={} payload={}".format(path, payload))
+        self.logger.debug("post to xxl-job path={} payload={}".format(path, payload))
         times = 0
         retry_times = retry_times or self.retry_times
         while times < retry_times:
@@ -99,7 +100,7 @@ class XXL:
                     raise XXLClientError(await response.text())
             except aiohttp.ClientConnectionError as e:
                 times += 1
-                logger.warning(
+                self.logger.warning(
                     "Connection error {} times, retry after {}. {}".format(times, self.retry_interval, str(e))
                 )
                 await asyncio.sleep(self.retry_interval)
@@ -108,4 +109,4 @@ class XXL:
 
     async def close(self) -> None:
         await self.session.close()
-        logger.info("http session is closed.")
+        self.logger.info("http session is closed.")
