@@ -76,9 +76,9 @@ app.run_executor()
 ```
 
 
-更多示例和接口文档请参考 [PYXXL文档](https://fcfangcc.github.io/pyxxl/example/) ，具体代码在example文件夹下面
+更多示例和接口文档请参考 [PYXXL文档](https://fcfangcc.github.io/pyxxl/latest/example/) ，具体代码在example文件夹下面
 
-如果executor服务无法直连xxl-admin，请参考[PYXXL配置](https://fcfangcc.github.io/pyxxl/apis/config/)修改executor_listen_host
+如果executor服务无法直连xxl-admin，请参考[PYXXL配置](https://fcfangcc.github.io/pyxxl/latest/apis/config/)修改executor_listen_host
 
 ## 监控指标
 
