@@ -29,8 +29,9 @@ all = ["redis", "python-dotenv", "prometheus-client"]
 doc = [
   "mdx-include~=1.4",
   "mkdocs~=1.4",
-  "mkdocs-material~=9.0",
+  "mkdocs-material~=9.5.23",
   "mkdocstrings[python]~=0.20",
+  "mike",
 ]
 dev = [
   "mypy~=1.8.0",
