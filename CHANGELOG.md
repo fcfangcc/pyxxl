@@ -1,3 +1,6 @@
+### 0.4.1
+* 修复配置中host和port的优先级 #68
+
 ### 0.4.0
 * 配置移除 **executor_host** **executor_port** 使用 **executor_url** 替代
 * 配置新增 **executor_logger**, 用于传入自定义logger[目前只能覆盖executor的日志]

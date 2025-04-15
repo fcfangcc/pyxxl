@@ -24,7 +24,7 @@ def test_config():
         executor_url="http://127.0.0.1",
         dotenv_try=False,
     )
-    assert setting.executor_listen_port == 80
+    assert setting.executor_listen_port == 9999
     assert setting.executor_listen_host == "127.0.0.1"
     assert setting.executor_app_name == "test"
 
@@ -76,3 +76,38 @@ def test_config():
 def test_error(msg, error, kwargs):
     with pytest.raises(error, match=msg):
         ExecutorConfig(**kwargs, dotenv_try=False)
+
+
+def test_host_and_port():
+    setting = ExecutorConfig(
+        xxl_admin_baseurl=TEST_ADMIN_URL,
+        executor_app_name="test",
+        executor_listen_port=8800,
+        dotenv_try=False,
+    )
+    assert setting.executor_listen_port == 8800
+    assert setting.executor_listen_host == get_network_ip()
+    assert setting.executor_url == f"http://{get_network_ip()}:8800"
+
+    setting = ExecutorConfig(
+        xxl_admin_baseurl=TEST_ADMIN_URL,
+        executor_app_name="test",
+        executor_listen_port=8800,
+        executor_listen_host="pyxxl.com",
+        dotenv_try=False,
+    )
+    assert setting.executor_listen_port == 8800
+    assert setting.executor_listen_host == "pyxxl.com"
+    assert setting.executor_url == "http://pyxxl.com:8800"
+
+    setting = ExecutorConfig(
+        xxl_admin_baseurl=TEST_ADMIN_URL,
+        executor_app_name="test",
+        executor_listen_port=8800,
+        executor_listen_host="pyxxl.com",
+        executor_url="http://nginx-domain:8080",
+        dotenv_try=False,
+    )
+    assert setting.executor_listen_port == 8800
+    assert setting.executor_listen_host == "pyxxl.com"
+    assert setting.executor_url == "http://nginx-domain:8080"
