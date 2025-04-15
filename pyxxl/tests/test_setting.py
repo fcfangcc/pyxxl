@@ -18,14 +18,15 @@ def test_config():
     assert urlparse(setting.executor_url).hostname == get_network_ip()
     assert setting.executor_app_name == "test"
 
+    # like nginx proxy
     setting = ExecutorConfig(
         xxl_admin_baseurl=TEST_ADMIN_URL,
         executor_app_name="test",
-        executor_url="http://127.0.0.1",
+        executor_url="http://nginx_domain",
         dotenv_try=False,
     )
     assert setting.executor_listen_port == 9999
-    assert setting.executor_listen_host == "127.0.0.1"
+    assert setting.executor_listen_host == get_network_ip()
     assert setting.executor_app_name == "test"
 
     # from env
