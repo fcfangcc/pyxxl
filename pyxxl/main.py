@@ -59,8 +59,6 @@ class PyxxlRunner:
                 ExecutorConfig(
                     xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
                     executor_app_name="xxl-job-executor-sample",
-                    executor_listen_host="127.0.0.1",
-                    executor_listen_port=9999,
                     )
                 ,
                 handler=xxl_handler,

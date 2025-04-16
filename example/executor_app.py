@@ -8,8 +8,7 @@ from pyxxl.ctx import g
 config = ExecutorConfig(
     xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
     executor_app_name="xxl-job-executor-sample",
-    executor_listen_host="127.0.0.1",  # xxl-admin监听时绑定的host
-    executor_listen_port=9999,  # xxl-admin监听时绑定的端口
+    executor_listen_host="127.0.0.1",  # xxl-admin监听时绑定的host,默认为第一个网卡地址
     debug=True,
 )
 
