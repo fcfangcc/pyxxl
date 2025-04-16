@@ -35,7 +35,7 @@ def failed(reason: str) -> None:
 
 def as_str_dict(obj: Any) -> dict:
     if is_dataclass(obj):
-        obj = asdict(obj)
+        obj = asdict(obj)  # type: ignore[arg-type]
     return {k: str(v) for k, v in obj.items()}
 
 
