@@ -178,7 +178,7 @@ class Executor:
             elif data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
                 queue = self.get_queue(data.jobId)
                 if queue.full():
-                    msg = "Job {job_id} is  SERIAL, queue length more than {maxsize}." "Job {job}  discard!".format(
+                    msg = "Job {job_id} is  SERIAL, queue length more than {maxsize}.Job {job}  discard!".format(
                         job_id=data.jobId, job=data, maxsize=queue.maxsize
                     )
                     self.executor_logger.error(msg)
