@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 import aiohttp
 from yarl import URL
 
-from pyxxl.error import XXLClientError, XXLRegisterError
+from pyxxl.error import XXLClientError
 from pyxxl.log import xxl_client_logger
 
 JsonType = Union[None, int, str, bool, List[Any], Dict[Any, Any]]
@@ -62,7 +62,7 @@ class XXL:
         try:
             await self._post("registry", payload, retry_times=5)
             return True
-        except (XXLRegisterError, XXLClientError) as e:
+        except XXLClientError as e:
             self.logger.error("Registry executor failed. %s", e.message)
         return False
 

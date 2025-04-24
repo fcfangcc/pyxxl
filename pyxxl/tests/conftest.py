@@ -11,7 +11,6 @@ from pyxxl import ExecutorConfig
 from pyxxl.executor import Executor
 from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI, MokePyxxlRunner, MokeXXL
 
-GLOBAL_JOB_ID = 1
 GLOBAL_CONFIG: Any = dict(
     xxl_admin_baseurl="http://localhost:8080/xxl-job-admin/api/",
     executor_app_name="xxl-job-executor-sample",
@@ -25,10 +24,14 @@ GLOBAL_CONFIG: Any = dict(
 xxl_admin_baseurl = "http://localhost:8080/xxl-job-admin/api/"
 
 
-def _create_job_id() -> int:
-    global GLOBAL_JOB_ID
-    GLOBAL_JOB_ID += 1
-    return GLOBAL_JOB_ID
+def _generate_increment_id(start: int = 0) -> Generator[int, None, None]:
+    while True:
+        yield start
+        start += 1
+
+
+JOB_ID = _generate_increment_id()
+LOG_ID = _generate_increment_id(1000)
 
 
 @pytest.fixture(scope="session")
@@ -76,4 +79,15 @@ async def cli(aiohttp_client: AiohttpClient, web_app: Application) -> TestClient
 
 @pytest.fixture(scope="function")
 def job_id() -> int:
-    return _create_job_id()
+    return next(JOB_ID)
+
+
+@pytest.fixture(scope="session")
+def log_id_iter() -> Generator[int, None, None]:
+    """Generate log_id for each test case."""
+    return LOG_ID
+
+
+@pytest.fixture(scope="function")
+def log_id() -> int:
+    return next(LOG_ID)

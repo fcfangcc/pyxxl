@@ -95,9 +95,6 @@ class ExecutorConfig:
         if not self.executor_listen_host:
             self.executor_listen_host = get_network_ip()
 
-        if not self.executor_listen_port:
-            self.executor_listen_port = 9999
-
         if not self.executor_url:
             self.executor_url = f"http://{self.executor_listen_host}:{self.executor_listen_port}"
 

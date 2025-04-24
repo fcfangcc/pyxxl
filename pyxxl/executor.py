@@ -24,7 +24,7 @@ from pyxxl.xxl_client import XXL
 _BACKGROUND_TASKS: MutableSet[asyncio.Task] = set()
 
 
-def spawn_task(task: asyncio.Task) -> None:
+def _spawn_task(task: asyncio.Task) -> None:
     _BACKGROUND_TASKS.add(task)
     task.add_done_callback(_BACKGROUND_TASKS.discard)
 
@@ -150,6 +150,11 @@ class Executor:
     def executor_logger(self) -> logging.Logger:
         return self.config.executor_logger
 
+    def _create_task(self, data: RunData) -> XXLTask:
+        """创建一个任务"""
+        task = self.loop.create_task(self._run(data), name=f"{data.jobId}_{data.logId}")
+        return XXLTask(task, data)
+
     async def run_job(self, data: RunData) -> str:
         handler_obj = self.handler.get(data.executorHandler)
         if not handler_obj:
@@ -160,7 +165,7 @@ class Executor:
         async with self.lock:
             current_task = self.tasks.get(data.jobId)
             if not current_task and self.get_queue(data.jobId).empty():
-                self.tasks[data.jobId] = XXLTask(self.loop.create_task(self._run(data)), data)
+                self.tasks[data.jobId] = self._create_task(data)
                 return "Running"
 
             self.executor_logger.warning("jobId {} is running. current_task={}".format(data.jobId, current_task))
@@ -172,8 +177,8 @@ class Executor:
             elif data.executorBlockStrategy == executorBlockStrategy.COVER_EARLY.value:
                 msg = "Job {} BlockStrategy is COVER_EARLY, logId {} replaced.".format(data.jobId, data.logId)
                 self.executor_logger.warning(msg)
-                spawn_task(self.loop.create_task(self.cancel_job(data.jobId, include_queue=False)))
                 await self.get_queue(data.jobId).put(data)
+                _spawn_task(self.loop.create_task(self.cancel_job(data.jobId, include_queue=False)))
                 return msg
             elif data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
                 queue = self.get_queue(data.jobId)
@@ -197,9 +202,8 @@ class Executor:
                 )
 
     async def cancel_job(self, job_id: int, include_queue: bool = True) -> None:
+        await asyncio.sleep(0.01)  # delay for pytest
         self.executor_logger.warning("start kill job: job_id={}".format(job_id))
-        await asyncio.sleep(0.01)  # sleep for pytest
-
         async with self.lock:
             if include_queue:
                 queue = self.get_queue(job_id)
@@ -263,7 +267,7 @@ class Executor:
             self.executor_logger.info(
                 "Get data from queue jobId={}, after queueSize={}, data={}".format(job_id, queue.qsize(), data)
             )
-            self.tasks[job_id] = XXLTask(self.loop.create_task(self._run(data)), data)
+            self.tasks[job_id] = self._create_task(data)
             queue.task_done()
 
     async def shutdown(self) -> None:
