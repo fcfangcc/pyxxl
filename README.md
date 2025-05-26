@@ -125,6 +125,10 @@ def sync_loop_demo2():
 
 1. 界面上显示的执行时间其实是任务回调的时间，而不是真正开始的时间.这是XXL-JOB的bug，pyxxl这边已经传了正确的执行时间过去，XXL-JOB没有按预期解析直接取了当前时间
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=fcfangcc/pyxxl&type=Date)](https://www.star-history.com/#fcfangcc/pyxxl&Date)
+
 ## 开发人员
 下面是开发人员如何快捷的搭建开发调试环境
 
