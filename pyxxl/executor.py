@@ -136,6 +136,7 @@ class Executor:
         self.queue: Dict[int, asyncio.Queue[RunData]] = defaultdict(
             lambda: asyncio.Queue(maxsize=self.config.task_queue_length)
         )
+        # todo: lock for jobId
         self.lock = asyncio.Lock()
         self.thread_pool = ThreadPoolExecutor(
             max_workers=self.config.max_workers,

@@ -22,6 +22,8 @@ KEY_PREFIX = "pyxxl:log:{app}:{log_id}"
 
 
 class RedisHandler(logging.Handler):
+    terminator = "\n"
+
     def __init__(
         self,
         key: str,
@@ -42,7 +44,7 @@ class RedisHandler(logging.Handler):
             xxl_kwargs = g.try_get_run_data()
             record.logId = xxl_kwargs.logId if xxl_kwargs else "NotInTask"
             p = self.rclient.pipeline()
-            p.rpush(self.key, self.format(record))
+            p.rpush(self.key, self.format(record) + self.terminator)
             p.ltrim(self.key, -self.max_lines, -1)
             p.expire(self.key, self.ttl)
             p.execute()

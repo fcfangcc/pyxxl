@@ -26,6 +26,7 @@ else:
             marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
         ),
     ],
+    ids=["disk", "redis"],
 )
 @pytest.mark.parametrize(
     "req,resp",
@@ -87,7 +88,10 @@ async def test_disk_logger(get_log: Callable[..., LogBase]):
     log_id = int(time.time())
     async with log.mock_logger(log_id) as mock_log:
         logger = mock_log.get_logger(log_id)
-        logger.error("test error.")
+        try:
+            raise ValueError("test error")
+        except ValueError as e:
+            logger.error(e, exc_info=True)
         logger.warning("test warning.")
         logger.handlers.clear()
 
