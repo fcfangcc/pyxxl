@@ -1,3 +1,7 @@
+### 0.4.2
+* 增加参数log_clean_interval
+* 删除本地日志时释放cpu权限，防止卡死loop
+
 ### 0.4.1
 * 修复配置中host和port的优先级 #68
 

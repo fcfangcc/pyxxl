@@ -58,7 +58,7 @@ class RedisLog(LogBase):
         app: str,
         redis_client: Union[str, "redis.ConnectionPool"],
         log_tail_lines: int = 0,
-        expired_days: int = 14,
+        expired_days: float = 14,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         if redis is None:
@@ -66,7 +66,7 @@ class RedisLog(LogBase):
         self.executor_logger = logger or executor_logger
         self.app = app
         self.log_tail_lines = log_tail_lines or MAX_LOG_TAIL_LINES
-        self.expired_days = expired_days
+        self.expired_seconds = round(expired_days * 3600 * 24)
         if isinstance(redis_client, str):
             rclient = redis.Redis.from_url(redis_client)
         elif isinstance(redis_client, redis.ConnectionPool):
@@ -82,7 +82,7 @@ class RedisLog(LogBase):
         logger.propagate = False
         logger.setLevel(level)
         handlers: list[Handler] = [PyxxlStreamHandler()] if stdout else []
-        handlers.append(RedisHandler(self.key(log_id), self.expired_days * 3600 * 24, self.rclient))
+        handlers.append(RedisHandler(self.key(log_id), self.expired_seconds, self.rclient))
         for h in handlers:
             h.setFormatter(TASK_FORMATTER)
             h.setLevel(level)

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -26,7 +27,7 @@ class DiskLog(LogBase):
         self,
         log_path: str,
         log_tail_lines: int = 0,
-        expired_days: int = 14,
+        expired_days: float = 14,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         self.log_path = Path(log_path)
@@ -35,7 +36,7 @@ class DiskLog(LogBase):
             self.log_path.mkdir()  # pragma: no cover
             self.executor_logger.info("create logdir %s" % self.log_path)  # pragma: no cover
         self.log_tail_lines = log_tail_lines or MAX_LOG_TAIL_LINES
-        self.expired_days = expired_days
+        self.expired_seconds = round(3600 * 24 * expired_days)
 
     def key(self, log_id: int) -> str:
         return self.log_path.joinpath(LOG_NAME_PREFIX.format(log_id=log_id)).absolute().as_posix()
@@ -84,9 +85,9 @@ class DiskLog(LogBase):
         async with aiofiles.open(key, mode="r") as f:
             return await f.read()
 
-    async def expired_once(self) -> None:
+    async def expired_once(self, batch: int = 1000) -> None:
         now = time.time()
-        expire_timestamp = now - 3600 * 24 * self.expired_days
+        expire_timestamp = now - self.expired_seconds
         del_list: List[Path] = []
         if self.log_path.exists():
             for sub_path in [i for i in self.log_path.glob(LOG_NAME_REGEX) if i.is_file()]:
@@ -94,12 +95,15 @@ class DiskLog(LogBase):
                 if ctime < expire_timestamp:
                     del_list.append(sub_path)
 
-        if del_list:
-            self.executor_logger.info(
-                "delete expired logs [{}] - {}".format(len(del_list), " | ".join(str(i) for i in del_list))
-            )
-            for i in del_list:
-                i.unlink()
+        self.executor_logger.info("Search expired logs, found %s", len(del_list))
+
+        while len(del_list) > 0:
+            delete_batch = del_list[:batch]
+            del_list = del_list[batch:]
+            for i in delete_batch:
+                i.unlink(missing_ok=True)
+            self.executor_logger.info("Delete expired logs successfully, count: %s", len(delete_batch))
+            await asyncio.sleep(0.05)  # release CPU for other tasks
 
     @asynccontextmanager
     async def mock_write(self, *lines: Any) -> AsyncGenerator[str, None]:

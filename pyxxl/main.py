@@ -122,7 +122,9 @@ class PyxxlRunner:
             executor_logger=self.config.executor_logger,
         )
         app["pyxxl_state"] = state
-        executor_log_task = asyncio.create_task(state.task_log.expired_loop(), name="log_task")
+        executor_log_task = asyncio.create_task(
+            state.task_log.expired_loop(self.config.log_clean_interval), name="log_task"
+        )
         register_task = asyncio.create_task(self._register_task(state.xxl_client), name="register_task")
         if state.executor.handler:
             state.executor_logger.info("register with handlers %s", list(executor.handler.handlers_info()))

@@ -75,8 +75,13 @@ class ExecutorConfig:
     """task任务日志存储的本地目录,默认为当前目录logs文件夹"""
     log_redis_uri: str = ""
     """task任务日志存储到redis的连接地址"""
-    log_expired_days: int = 14
+    log_expired_days: float = 14
     """task任务日志存储的本地的过期天数. Default: 14"""
+    log_clean_interval: int = 3600
+    """task任务日志清理的间隔时间,单位秒. Default: 3600
+
+    如果你的任务执行很频繁，建议减少这个时间间隔，比如设置为60秒，这样每分钟会清理一次过期的日志，避免一次性清理太多文件卡住主进程
+    """
 
     dotenv_try: bool = True
     dotenv_path: Optional[str] = None

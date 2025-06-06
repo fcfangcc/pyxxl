@@ -49,6 +49,10 @@ class LogBase(ABC):
             while True:
                 await self.expired_once()
                 await asyncio.sleep(seconds)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            self.executor_logger.exception(e)
         finally:
             self.executor_logger.info("expired_loop exit...")
 
