@@ -96,14 +96,14 @@ class DiskLog(LogBase):
                     del_list.append(sub_path)
 
         self.executor_logger.info("Search expired logs, found %s", len(del_list))
+        for i, p in enumerate(del_list):
+            if i % batch == 0:
+                self.executor_logger.debug("Delete expired logs step: %s", i)
+                await asyncio.sleep(0.05)  # release CPU for other tasks
+            p.unlink(missing_ok=True)
 
-        while len(del_list) > 0:
-            delete_batch = del_list[:batch]
-            del_list = del_list[batch:]
-            for i in delete_batch:
-                i.unlink(missing_ok=True)
-            self.executor_logger.info("Delete expired logs successfully, count: %s", len(delete_batch))
-            await asyncio.sleep(0.05)  # release CPU for other tasks
+        if del_list:
+            self.executor_logger.info("Delete expired logs successfully, count: %s", len(del_list))
 
     @asynccontextmanager
     async def mock_write(self, *lines: Any) -> AsyncGenerator[str, None]:
