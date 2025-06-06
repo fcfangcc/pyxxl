@@ -44,6 +44,10 @@ dev = [
   "ruff<=1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/fcfangcc/pyxxl"
+Documentation = "https://fcfangcc.github.io/pyxxl/latest/"
+
 [build-system]
 requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
