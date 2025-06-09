@@ -6,9 +6,12 @@ name: Python Test
 on:
   push:
     branches: [main]
+    paths:
+      - 'pyxxl/**'
   pull_request:
     types: [opened, synchronize]
-
+    paths:
+      - 'pyxxl/**'
 jobs:
   pytest:
     runs-on: ubuntu-latest
