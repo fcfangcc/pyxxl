@@ -88,22 +88,35 @@ class DiskLog(LogBase):
     async def expired_once(self, batch: int = 1000) -> None:
         now = time.time()
         expire_timestamp = now - self.expired_seconds
-        del_list: List[Path] = []
-        if self.log_path.exists():
-            for sub_path in [i for i in self.log_path.glob(LOG_NAME_REGEX) if i.is_file()]:
-                ctime = os.path.getctime(sub_path.absolute())
-                if ctime < expire_timestamp:
-                    del_list.append(sub_path)
 
+        del_list = await asyncio.to_thread(self._scan_expired_files, expire_timestamp)
         self.executor_logger.info("Search expired logs, found %s", len(del_list))
-        for i, p in enumerate(del_list):
+
+        for i, p in enumerate(del_list, 1):
             if i % batch == 0:
                 self.executor_logger.debug("Delete expired logs step: %s", i)
-                await asyncio.sleep(0.05)  # release CPU for other tasks
+                await asyncio.sleep(0.01)  # release CPU for other tasks
             p.unlink(missing_ok=True)
 
         if del_list:
             self.executor_logger.info("Delete expired logs successfully, count: %s", len(del_list))
+
+    def _scan_expired_files(self, expire_timestamp: float) -> List[Path]:
+        if not self.log_path.exists():
+            return []
+
+        del_list: List[Path] = []
+        self.executor_logger.debug("Start scan expired files")
+        for sub_path in (i for i in self.log_path.glob(LOG_NAME_REGEX) if i.is_file()):
+            try:
+                ctime = os.path.getctime(sub_path.absolute())
+                if ctime < expire_timestamp:
+                    del_list.append(sub_path)
+            except (OSError, FileNotFoundError) as e:
+                # 文件可能在扫描过程中被删除
+                self.executor_logger.debug(f"Skip file {sub_path}: {e}")
+                continue
+        return del_list
 
     @asynccontextmanager
     async def mock_write(self, *lines: Any) -> AsyncGenerator[str, None]:
