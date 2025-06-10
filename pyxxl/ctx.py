@@ -12,8 +12,8 @@ class GlobalVars:
     _EVENT: ContextVar = ContextVar("_EVENT")
 
     @classmethod
-    def set_xxl_run_data(cls, data: RunData) -> None:
-        cls._DATA.set(data)
+    def set_xxl_run_data(cls, data: RunData) -> Token[RunData]:
+        return cls._DATA.set(data)
 
     @classmethod
     def try_get_run_data(cls) -> Optional[RunData]:

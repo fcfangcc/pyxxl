@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from pyxxl.ctx import g
 from pyxxl.types import LogRequest, LogResponse
@@ -28,13 +28,13 @@ class LogBase(ABC):
     async def get_logs(self, request: LogRequest) -> LogResponse: ...
 
     @abstractmethod
-    async def read_task_logs(self, job_id: int, log_id: int, *, key: Optional[str] = None) -> str:
+    async def read_task_logs(self, job_id: int, log_id: int) -> str | None:
         """一次性读取某个log id的所有日志,主要用于单测"""
         ...
 
-    async def expired_once(self) -> None:  # noqa: B027
+    async def expired_once(self, *, expired_seconds: None | int = None, **kwargs: Any) -> bool:
         """执行一次批量过期操作,如果是redis啥的自带过期就无需实现此方法"""
-        pass
+        return False
 
     async def expired_loop(self, seconds: int = 3600) -> None:
         """

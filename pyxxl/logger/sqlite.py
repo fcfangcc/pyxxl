@@ -1,9 +1,10 @@
 import logging
 import sqlite3
 import threading
+import time
 import traceback
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pyxxl.ctx import g
 from pyxxl.log import executor_logger
@@ -80,6 +81,17 @@ class DB:
             )
             return total, [i[0] for i in self.cursor.fetchall()]
 
+    def delete_expired(self, last_ms: int) -> None:
+        with self.dblock:
+            self.cursor.execute(
+                """
+                DELETE FROM logs
+                WHERE ms_timestamp <= ?
+            """,
+                (last_ms,),
+            )
+            self.conn.commit()
+
     def close(self) -> None:
         self.cursor.close()
         self.conn.close()
@@ -111,17 +123,22 @@ class SQLiteLog(LogBase):
     """Log handler for SQLite database."""
 
     def __init__(
-        self, log_path: str = "./", logger: Optional[logging.Logger] = None, log_tail_lines: int = 10
+        self,
+        log_path: str = "./",
+        logger: Optional[logging.Logger] = None,
+        log_tail_lines: int = 10,
+        expired_days: float = 14,
     ) -> None:
         if sqlite3 is None:
             raise ImportError("SQLite3 is not available. Please install it or use a different logging backend.")
         self.executor_logger = logger or executor_logger
         self.log_path = log_path
         self.log_tail_lines = log_tail_lines
+        self.expired_seconds = round(expired_days * 3600 * 24)
         self._db_map: dict[str, DB] = dict()
 
     def _get_db(self, dbname: str) -> DB:
-        """Get or create a DB instance for the given job_id."""
+        # todo: clean dead db instances
         if dbname not in self._db_map:
             db = DB(dbname, self.log_path)
             self._db_map[dbname] = db
@@ -167,7 +184,20 @@ class SQLiteLog(LogBase):
             isEnd=to_line_num >= total,
         )
 
-    async def read_task_logs(self, job_id: int, log_id: int, *, key: Optional[str] = None) -> str:
+    async def read_task_logs(self, job_id: int, log_id: int) -> str | None:
         db = self._get_db(str(job_id))
-        _, logs = db.query(str(log_id), 0, 100000)
+        total, logs = db.query(str(log_id), 0, 100000)
+        if total == 0:
+            return None
+
         return "".join(logs)
+
+    async def expired_once(self, *, expired_seconds: None | int = None, **kwargs: Any) -> bool:
+        """Delete expired logs from the database."""
+        if expired_seconds is None:
+            expired_seconds = self.expired_seconds
+        last_ms = round((time.time() - expired_seconds) * 1000)
+        for db in self._db_map.values():
+            db.delete_expired(last_ms)
+
+        return True

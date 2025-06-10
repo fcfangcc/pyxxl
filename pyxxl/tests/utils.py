@@ -1,7 +1,10 @@
 import os
-from typing import Any, Dict, Optional
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator, Dict, Optional
 
+from pyxxl.ctx import g
 from pyxxl.main import PyxxlRunner
+from pyxxl.schema import RunData
 from pyxxl.utils import try_import
 from pyxxl.xxl_client import XXL, JsonType, Response
 
@@ -26,3 +29,12 @@ class MokePyxxlRunner(PyxxlRunner):
 
 REDIS_TEST_URI = os.environ.get("REDIS_TEST_URI", "redis://localhost")
 INSTALL_REDIS = bool(try_import("redis"))
+
+
+@asynccontextmanager
+async def mock_run_data(job_id: int, log_id: int) -> AsyncGenerator[None, None]:
+    token = g.set_xxl_run_data(
+        RunData(jobId=job_id, logId=log_id, executorHandler="mock", executorBlockStrategy="serial")
+    )
+    yield None
+    g._DATA.reset(token)

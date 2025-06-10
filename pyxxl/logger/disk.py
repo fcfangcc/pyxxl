@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 import aiofiles
 
@@ -83,14 +83,19 @@ class DiskLog(LogBase):
             isEnd=is_end,
         )
 
-    async def read_task_logs(self, _job_id: int, log_id: int, *, key: Optional[str] = None) -> str:
-        key = key or self.key(log_id)
-        async with aiofiles.open(key, mode="r") as f:
+    async def read_task_logs(self, _job_id: int, log_id: int) -> str | None:
+        p = Path(self.key(log_id))
+        if not p.exists():
+            return None
+
+        async with aiofiles.open(p, mode="r") as f:
             return await f.read()
 
-    async def expired_once(self, batch: int = 1000) -> None:
+    async def expired_once(self, *, expired_seconds: None | int = None, batch: int = 1000, **kwargs: Any) -> bool:
         now = time.time()
-        expire_timestamp = now - self.expired_seconds
+        if expired_seconds is None:
+            expired_seconds = self.expired_seconds
+        expire_timestamp = now - expired_seconds
 
         del_list = await asyncio.to_thread(self._scan_expired_files, expire_timestamp)
         self.executor_logger.info("Search expired logs, found %s", len(del_list))
@@ -103,6 +108,8 @@ class DiskLog(LogBase):
 
         if del_list:
             self.executor_logger.info("Delete expired logs successfully, count: %s", len(del_list))
+
+        return True
 
     def _scan_expired_files(self, expire_timestamp: float) -> List[Path]:
         if not self.log_path.exists():

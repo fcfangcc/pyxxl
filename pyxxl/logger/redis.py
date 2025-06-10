@@ -94,9 +94,11 @@ class RedisLog(LogBase):
     def key(self, log_id: int) -> str:
         return f"{self.prefix}:{self.app}:{log_id}"
 
-    async def read_task_logs(self, _job_id: int, log_id: int, *, key: Optional[str] = None) -> str:
-        key = key or self.key(log_id)
-        # todo: use async
+    async def read_task_logs(self, _job_id: int, log_id: int) -> str | None:
+        key = self.key(log_id)
+        if not self.rclient.exists(key):
+            return None
+
         return "".join(i.decode() for i in self.rclient.lrange(key, 0, -1))
 
     async def get_logs(self, request: LogRequest) -> LogResponse:
