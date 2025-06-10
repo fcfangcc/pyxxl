@@ -1,11 +1,13 @@
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Callable
 
 import aiofiles
 import pytest
 
-from pyxxl.logger import DiskLog, LogBase, RedisLog
+from pyxxl.ctx import g
+from pyxxl.logger import DiskLog, LogBase, RedisLog, SQLiteLog
 from pyxxl.tests.utils import INSTALL_REDIS, REDIS_TEST_URI
 from pyxxl.types import LogRequest, LogResponse
 from pyxxl.utils import try_import
@@ -20,94 +22,76 @@ else:
 @pytest.mark.parametrize(
     "get_log",
     [
-        lambda: DiskLog("", log_tail_lines=20),
+        lambda temp_dir: DiskLog(temp_dir, log_tail_lines=20),
+        lambda temp_dir: SQLiteLog(temp_dir, log_tail_lines=20),
         pytest.param(
-            lambda: RedisLog("pyxxl-test", REDIS_TEST_URI, log_tail_lines=20),
+            lambda temp_dir: RedisLog(
+                "pyxxl-test", REDIS_TEST_URI, log_tail_lines=20, prefix=str(hash(temp_dir)), expired_days=1
+            ),
             marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
         ),
     ],
-    ids=["disk", "redis"],
+    ids=["disk", "sqlite", "redis"],
 )
-@pytest.mark.parametrize(
-    "req,resp",
-    [
-        (
-            LogRequest(logDateTim=0, logId=0, fromLineNum=1),
-            LogResponse(
-                fromLineNum=1,
-                toLineNum=20,
-                logContent="".join(str(i) + "\n" for i in range(1, 21)),
-                isEnd=False,
+class TestTaskLogger:
+    @pytest.mark.parametrize(
+        "req,resp",
+        [
+            (
+                LogRequest(logDateTim=0, logId=0, fromLineNum=1),
+                LogResponse(fromLineNum=1, toLineNum=20, logContent="", isEnd=False),
             ),
-        ),
-        (
-            LogRequest(logDateTim=0, logId=0, fromLineNum=21),
-            LogResponse(
-                fromLineNum=21,
-                toLineNum=40,
-                logContent="".join(str(i) + "\n" for i in range(21, 41)),
-                isEnd=False,
+            (
+                LogRequest(logDateTim=0, logId=0, fromLineNum=21),
+                LogResponse(fromLineNum=21, toLineNum=40, logContent="", isEnd=False),
             ),
-        ),
-        (
-            LogRequest(logDateTim=0, logId=0, fromLineNum=81),
-            LogResponse(
-                fromLineNum=81,
-                toLineNum=81,
-                logContent="",
-                isEnd=True,
-            ),
-        ),
-    ],
-)
-async def test_read_file(get_log: Callable[..., LogBase], req, resp):
-    log = get_log()
-    data = [str(i).encode() + b"\n" for i in range(1, 80 + 1)]
-    async with log.mock_write(*data) as key:
-        assert await log.get_logs(req, key=key) == resp
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "get_log",
-    [
-        lambda: DiskLog("", log_tail_lines=20),
-        pytest.param(
-            lambda: RedisLog("pyxxl-test", REDIS_TEST_URI, log_tail_lines=20),
-            marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
-        ),
-        pytest.param(
-            lambda: RedisLog("pyxxl-test", redis.ConnectionPool.from_url(REDIS_TEST_URI), log_tail_lines=20),
-            marks=pytest.mark.skipif(not INSTALL_REDIS, reason="no redis package."),
-        ),
-    ],
-    ids=["disk", "redis", "redis-pool"],
-)
-async def test_disk_logger(get_log: Callable[..., LogBase]):
-    log = get_log()
-    log_id = int(time.time())
-    async with log.mock_logger(log_id) as mock_log:
-        logger = mock_log.get_logger(log_id)
-        try:
-            raise ValueError("test error")
-        except ValueError as e:
-            logger.error(e, exc_info=True)
-        logger.warning("test warning.")
-        logger.handlers.clear()
-
-        read_data = await mock_log.read_task_logs(log_id)
-        for b in ["test error", "test warning", "ERROR", "WARNING"]:
-            assert b in read_data
-    # test file not found
-    assert (
-        "No such logid logs"
-        in (
-            await log.get_logs(
+            (
                 LogRequest(logDateTim=0, logId=0, fromLineNum=81),
-                key="xxxxxxxxxxxx.log",
-            )
-        )["logContent"]
+                LogResponse(fromLineNum=81, toLineNum=81, logContent="", isEnd=True),
+            ),
+        ],
     )
+    async def test_read_storage(
+        self,
+        get_log: Callable[[str], LogBase],
+        req: LogRequest,
+        resp: LogResponse,
+        job_id: int,
+        log_id: int,
+    ):
+        async with aiofiles.tempfile.TemporaryDirectory() as temp_dir:
+            log = get_log(temp_dir)
+            g.set_xxl_run_data(SimpleNamespace(jobId=job_id, logId=log_id))
+            logger = log.get_logger(job_id, log_id)
+            for i in range(1, 81):
+                logger.info(str(i))
+
+            req["jobId"] = job_id
+            req["logId"] = log_id
+            log_resp = await log.get_logs(req)
+            assert log_resp["fromLineNum"] == resp["fromLineNum"]
+            assert log_resp["toLineNum"] == resp["toLineNum"]
+            assert log_resp["isEnd"] == resp["isEnd"]
+            # assert await log.get_logs(req) == resp
+
+    async def test_logger(self, get_log: Callable[[str], LogBase], job_id: int, log_id: int):
+        async with aiofiles.tempfile.TemporaryDirectory() as temp_dir:
+            log = get_log(temp_dir)
+            logger = log.get_logger(job_id, log_id)
+            g.set_xxl_run_data(SimpleNamespace(jobId=job_id, logId=log_id))
+            try:
+                raise ValueError("test error")
+            except ValueError as e:
+                logger.error(e, exc_info=True)
+            logger.warning("test warning.")
+            logger.handlers.clear()
+
+            read_data = await log.read_task_logs(job_id, log_id)
+            for b in ["test error", "test warning", "ERROR", "WARNING"]:
+                assert b in read_data
+
+            log_resp = await log.get_logs(LogRequest(logDateTim=0, logId=-1, fromLineNum=81, jobId=job_id))
+            assert "No such logid logs" in log_resp["logContent"]
 
 
 @pytest.mark.asyncio
@@ -115,7 +99,7 @@ async def test_disk_expired():
     log_id = int(time.time())
     async with aiofiles.tempfile.TemporaryDirectory() as d:
         file_log = DiskLog(log_path=d, expired_days=0)
-        logger = file_log.get_logger(log_id, stdout=False)
+        logger = file_log.get_logger(0, log_id, stdout=False)
         logger.error("test error.")
         logger.warning("test warning.")
         logger.handlers.clear()

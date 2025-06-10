@@ -1,7 +1,5 @@
 import logging
-import time
-from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pyxxl.ctx import g
 from pyxxl.log import executor_logger
@@ -18,7 +16,7 @@ else:
     redis = try_import("redis")
 
 
-KEY_PREFIX = "pyxxl:log:{app}:{log_id}"
+KEY_PREFIX = "pyxxl:log"
 
 
 class RedisHandler(logging.Handler):
@@ -60,6 +58,7 @@ class RedisLog(LogBase):
         log_tail_lines: int = 0,
         expired_days: float = 14,
         logger: Optional[logging.Logger] = None,
+        prefix: str = KEY_PREFIX,
     ) -> None:
         if redis is None:
             raise ImportError("Depend on redis. pip install redis or pip install pyxxl[redis].")  # pragma: no cover
@@ -76,8 +75,11 @@ class RedisLog(LogBase):
                 "pool expect Union[str, redis.ConnectionPool], got %s." % type(redis_client)
             )  # pragma: no cover
         self.rclient = rclient
+        self.prefix = prefix
 
-    def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger:
+    def get_logger(
+        self, _job_id: int, log_id: int, *, stdout: bool = True, level: int = logging.INFO
+    ) -> logging.Logger:
         logger = logging.getLogger("pyxxl.task_log.redis.task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
@@ -90,20 +92,20 @@ class RedisLog(LogBase):
         return logger
 
     def key(self, log_id: int) -> str:
-        return KEY_PREFIX.format(app=self.app, log_id=log_id)
+        return f"{self.prefix}:{self.app}:{log_id}"
 
-    async def read_task_logs(self, log_id: int, *, key: Optional[str] = None) -> str:
+    async def read_task_logs(self, _job_id: int, log_id: int, *, key: Optional[str] = None) -> str:
         key = key or self.key(log_id)
         # todo: use async
         return "".join(i.decode() for i in self.rclient.lrange(key, 0, -1))
 
-    async def get_logs(self, request: LogRequest, *, key: Optional[str] = None) -> LogResponse:
-        key = key or self.key(request["logId"])
+    async def get_logs(self, request: LogRequest) -> LogResponse:
+        key = self.key(request["logId"])
         from_line = request["fromLineNum"] - 1
         to_line = request["fromLineNum"] - 1 + self.log_tail_lines
         llen = self.rclient.llen(key)
         if from_line >= llen:
-            logs = "No such logid logs." if llen == 0 else ""
+            logs = self.NOT_FOUND_LOGS if llen == 0 else ""
             to_line_num = request["fromLineNum"]
         else:
             # lrange 0 20   [0, 20]
@@ -116,15 +118,3 @@ class RedisLog(LogBase):
             logContent=logs,
             isEnd=llen <= to_line,
         )
-
-    @asynccontextmanager
-    async def mock_write(self, *lines: Any) -> AsyncGenerator[str, None]:
-        key = self.key(int(time.time() * 1000))
-        self.rclient.rpush(key, *lines)
-        yield key
-        self.rclient.delete(key)
-
-    @asynccontextmanager
-    async def mock_logger(self, log_id: int) -> AsyncGenerator[LogBase, None]:
-        yield self
-        self.rclient.delete(self.key(log_id))

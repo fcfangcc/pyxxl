@@ -17,3 +17,4 @@ class LogRequest(TypedDict):
     logDateTim: int
     logId: int
     fromLineNum: int  # min 1
+    jobId: int

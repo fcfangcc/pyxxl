@@ -228,7 +228,7 @@ class Executor:
         handler = self.handler.get(data.executorHandler)
         assert handler
         g.set_xxl_run_data(data)
-        with new_logger(self.logger_factory, data.logId) as task_logger:
+        with new_logger(self.logger_factory, data.jobId, data.logId) as task_logger:
             start_time = int(time.time() * 1000)
             try:
                 task_logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))

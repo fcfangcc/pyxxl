@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, AsyncContextManager, Optional
+from typing import Any, Optional
 
 from pyxxl.ctx import g
 from pyxxl.types import LogRequest, LogResponse
@@ -17,23 +17,20 @@ TASK_FORMATTER = logging.Formatter(TASK_FORMAT, datefmt=TASKDATE_FORMAT)
 
 class LogBase(ABC):
     executor_logger: logging.Logger
+    NOT_FOUND_LOGS = "No such logid logs."
 
     @abstractmethod
-    def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger: ...
+    def get_logger(
+        self, job_id: int, log_id: int, *, stdout: bool = True, level: int = logging.INFO
+    ) -> logging.Logger: ...
 
     @abstractmethod
-    async def get_logs(self, request: LogRequest, *, key: Optional[str] = None) -> LogResponse: ...
+    async def get_logs(self, request: LogRequest) -> LogResponse: ...
 
     @abstractmethod
-    async def read_task_logs(self, log_id: int, *, key: Optional[str] = None) -> str:
+    async def read_task_logs(self, job_id: int, log_id: int, *, key: Optional[str] = None) -> str:
         """一次性读取某个log id的所有日志,主要用于单测"""
         ...
-
-    @abstractmethod
-    def mock_write(self, *lines: Any) -> AsyncContextManager[str]: ...
-
-    @abstractmethod
-    def mock_logger(self, log_id: int) -> AsyncContextManager["LogBase"]: ...
 
     async def expired_once(self) -> None:  # noqa: B027
         """执行一次批量过期操作,如果是redis啥的自带过期就无需实现此方法"""

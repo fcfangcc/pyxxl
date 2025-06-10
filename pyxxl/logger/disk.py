@@ -2,9 +2,8 @@ import asyncio
 import logging
 import os
 import time
-from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import aiofiles
 
@@ -35,13 +34,17 @@ class DiskLog(LogBase):
         if not self.log_path.exists():
             self.log_path.mkdir()  # pragma: no cover
             self.executor_logger.info("create logdir %s" % self.log_path)  # pragma: no cover
+
+        assert self.log_path.is_dir(), "log_path must be a directory"
         self.log_tail_lines = log_tail_lines or MAX_LOG_TAIL_LINES
         self.expired_seconds = round(3600 * 24 * expired_days)
 
     def key(self, log_id: int) -> str:
         return self.log_path.joinpath(LOG_NAME_PREFIX.format(log_id=log_id)).absolute().as_posix()
 
-    def get_logger(self, log_id: int, *, stdout: bool = True, level: int = logging.INFO) -> logging.Logger:
+    def get_logger(
+        self, _job_id: int, log_id: int, *, stdout: bool = True, level: int = logging.INFO
+    ) -> logging.Logger:
         logger = logging.getLogger("pyxxl.task_log.disk.task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
@@ -53,12 +56,12 @@ class DiskLog(LogBase):
             logger.addHandler(h)
         return logger
 
-    async def get_logs(self, request: LogRequest, *, key: Optional[str] = None) -> LogResponse:
+    async def get_logs(self, request: LogRequest) -> LogResponse:
         # todo: 优化获取中间行的逻辑，缓存之前每行日志的大小然后直接seek
         logs = ""
         to_line_num = request["fromLineNum"]  # start with 1
         is_end = False
-        key = key or self.key(request["logId"])
+        key = self.key(request["logId"])
         try:
             async with aiofiles.open(key, mode="r") as f:
                 for i in range(1, request["fromLineNum"] + self.log_tail_lines):
@@ -71,7 +74,7 @@ class DiskLog(LogBase):
                         logs += log
         except FileNotFoundError as e:
             self.executor_logger.warning(str(e), exc_info=True)
-            logs = "No such logid logs."
+            logs = self.NOT_FOUND_LOGS
 
         return LogResponse(
             fromLineNum=request["fromLineNum"],
@@ -80,7 +83,7 @@ class DiskLog(LogBase):
             isEnd=is_end,
         )
 
-    async def read_task_logs(self, log_id: int, *, key: Optional[str] = None) -> str:
+    async def read_task_logs(self, _job_id: int, log_id: int, *, key: Optional[str] = None) -> str:
         key = key or self.key(log_id)
         async with aiofiles.open(key, mode="r") as f:
             return await f.read()
@@ -117,20 +120,6 @@ class DiskLog(LogBase):
                 self.executor_logger.debug(f"Skip file {sub_path}: {e}")
                 continue
         return del_list
-
-    @asynccontextmanager
-    async def mock_write(self, *lines: Any) -> AsyncGenerator[str, None]:
-        async with aiofiles.tempfile.NamedTemporaryFile() as f:
-            await f.writelines(lines)
-            await f.flush()
-            await f.seek(0)
-            yield str(f.name)
-
-    @asynccontextmanager
-    async def mock_logger(self, _log_id: int) -> AsyncGenerator[LogBase, None]:
-        async with aiofiles.tempfile.TemporaryDirectory() as d:
-            handler = DiskLog(log_path=d)
-            yield handler
 
     def after_running(self, logger: logging.Logger) -> None:
         # !!! StreamHandler remove会有问题，需要判断是否是FileHandler
