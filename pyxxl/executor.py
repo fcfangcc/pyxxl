@@ -33,6 +33,7 @@ def _spawn_task(task: asyncio.Task) -> None:
 class HandlerInfo:
     handler: Callable
     is_async: bool = False
+    log_expired_seconds: Optional[int] = None
 
     def __str__(self) -> str:
         return "<HandlerInfo {}>".format(self.handler.__name__)
@@ -74,7 +75,11 @@ class JobHandler:
         self.logger = logger or executor_logger
 
     def register(
-        self, *args: Any, name: Optional[str] = None, replace: bool = False
+        self,
+        *args: Any,
+        name: Optional[str] = None,
+        replace: bool = False,
+        log_expired_seconds: Optional[int] = None,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         """将函数注册到可执行的job中,如果其他地方要调用该方法,replace修改为True"""
 
@@ -82,7 +87,7 @@ class JobHandler:
             handler_name = name or func.__name__
             if handler_name in self._handlers and replace is False:
                 raise error.JobRegisterError("handler %s already registered." % handler_name)
-            handler = HandlerInfo(handler=func)
+            handler = HandlerInfo(handler=func, log_expired_seconds=log_expired_seconds)
             if not handler.is_async:
                 warnings.warn(
                     "Using the sync method will unknown blocking exception, consider using async method.",
@@ -228,13 +233,15 @@ class Executor:
         handler = self.handler.get(data.executorHandler)
         assert handler
         g.set_xxl_run_data(data)
-        with new_logger(self.logger_factory, data.jobId, data.logId) as task_logger:
+        with new_logger(
+            self.logger_factory, data.jobId, data.logId, expired_seconds=handler.log_expired_seconds
+        ) as task_logger:
             start_time = int(time.time() * 1000)
             try:
-                task_logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
+                self.executor_logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
                 timeout = data.executorTimeout or self.config.task_timeout
                 result = await handler.start(timeout)
-                task_logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
+                self.executor_logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
                 await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
                 self.successed_callback()
             except asyncio.CancelledError as e:

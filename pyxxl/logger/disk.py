@@ -43,7 +43,13 @@ class DiskLog(LogBase):
         return self.log_path.joinpath(LOG_NAME_PREFIX.format(log_id=log_id)).absolute().as_posix()
 
     def get_logger(
-        self, _job_id: int, log_id: int, *, stdout: bool = True, level: int = logging.INFO
+        self,
+        _job_id: int,
+        log_id: int,
+        *,
+        stdout: bool = True,
+        level: int = logging.INFO,
+        expired_seconds: Optional[int] = None,
     ) -> logging.Logger:
         logger = logging.getLogger("pyxxl.task_log.disk.task-{%s}" % log_id)
         logger.propagate = False
@@ -91,7 +97,7 @@ class DiskLog(LogBase):
         async with aiofiles.open(p, mode="r") as f:
             return await f.read()
 
-    async def expired_once(self, *, expired_seconds: None | int = None, batch: int = 1000, **kwargs: Any) -> bool:
+    async def expired_once(self, expired_seconds: None | int = None, batch: int = 1000, **kwargs: Any) -> bool:
         now = time.time()
         if expired_seconds is None:
             expired_seconds = self.expired_seconds

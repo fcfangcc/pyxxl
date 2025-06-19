@@ -69,7 +69,7 @@ class ExecutorConfig:
     graceful_timeout: int = 60 * 5
     """优雅关闭的等待时间,超过改时间强制停止任务. Default: 60 * 5"""
 
-    log_target: Literal["disk", "redis"] = "disk"
+    log_target: Literal["disk", "redis", "sqlite"] = "disk"
     """task任务日志存储的地方.  Default: disk"""
     log_local_dir: str = "logs"
     """task任务日志存储的本地目录,默认为当前目录logs文件夹"""

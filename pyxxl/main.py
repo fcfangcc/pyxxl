@@ -7,7 +7,7 @@ from typing import Any, AsyncGenerator, NamedTuple, Optional
 from aiohttp import web
 
 from pyxxl import executor
-from pyxxl.logger import DiskLog, LogBase, RedisLog
+from pyxxl.logger import LogBase, init_task_log
 from pyxxl.server import create_app
 from pyxxl.setting import ExecutorConfig
 from pyxxl.utils import setup_logging, try_import
@@ -87,26 +87,8 @@ class PyxxlRunner:
         """for moke"""
         return XXL(self.config.xxl_admin_baseurl, token=self.config.access_token, logger=self.config.executor_logger)
 
-    def _get_log(self) -> LogBase:
-        if self.config.log_target == "disk":
-            return DiskLog(
-                log_path=self.config.log_local_dir,
-                expired_days=self.config.log_expired_days,
-                logger=self.config.executor_logger,
-            )
-
-        if self.config.log_target == "redis":
-            return RedisLog(
-                self.config.executor_app_name,
-                self.config.log_redis_uri,
-                expired_days=self.config.log_expired_days,
-                logger=self.config.executor_logger,
-            )
-
-        raise NotImplementedError
-
     async def _cleanup_ctx(self, app: web.Application) -> AsyncGenerator:
-        task_log = self._get_log()
+        task_log = init_task_log(self.config)
         xxl_client = self._get_xxl_clint()
         executor = Executor(
             xxl_client,

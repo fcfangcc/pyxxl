@@ -1,3 +1,4 @@
+import asyncio
 from typing import TYPE_CHECKING, Callable
 
 import aiofiles
@@ -91,17 +92,19 @@ class TestTaskLogger:
             assert "No such logid logs" in log_resp["logContent"]
 
     async def test_disk_expired(self, get_log: Callable[[str], LogBase], job_id: int, log_id: int):
+        expired_seconds = 5
         async with mock_run_data(job_id, log_id), aiofiles.tempfile.TemporaryDirectory() as temp_dir:
             log = get_log(temp_dir)
-            logger = log.get_logger(job_id, log_id, stdout=False)
+            logger = log.get_logger(job_id, log_id, stdout=False, expired_seconds=expired_seconds)
             logger.error("test error.")
             logger.warning("test warning.")
             logger.handlers.clear()
 
             logs = await log.read_task_logs(job_id, log_id)
             assert logs is not None
-
-            expired = await log.expired_once(expired_seconds=0)
+            await asyncio.sleep(expired_seconds)
+            # expired_seconds only for disk useful
+            expired = await log.expired_once(expired_seconds=expired_seconds)
             if not expired:
                 pytest.skip("expired_once not implemented in this logger type")
             logs = await log.read_task_logs(job_id, log_id)

@@ -43,6 +43,7 @@ dev = [
   "pytest-asyncio==0.18.3",
   "pytest-cov==3.0.0",
   "ruff<=1",
+  "pytest-xdist",
 ]
 
 [project.urls]

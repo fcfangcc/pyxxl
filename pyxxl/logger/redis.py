@@ -78,13 +78,19 @@ class RedisLog(LogBase):
         self.prefix = prefix
 
     def get_logger(
-        self, _job_id: int, log_id: int, *, stdout: bool = True, level: int = logging.INFO
+        self,
+        _job_id: int,
+        log_id: int,
+        *,
+        stdout: bool = True,
+        level: int = logging.INFO,
+        expired_seconds: Optional[int] = None,
     ) -> logging.Logger:
         logger = logging.getLogger("pyxxl.task_log.redis.task-{%s}" % log_id)
         logger.propagate = False
         logger.setLevel(level)
         handlers: list[Handler] = [PyxxlStreamHandler()] if stdout else []
-        handlers.append(RedisHandler(self.key(log_id), self.expired_seconds, self.rclient))
+        handlers.append(RedisHandler(self.key(log_id), expired_seconds or self.expired_seconds, self.rclient))
         for h in handlers:
             h.setFormatter(TASK_FORMATTER)
             h.setLevel(level)

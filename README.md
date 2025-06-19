@@ -37,15 +37,6 @@
 
 ```shell
 pip install pyxxl
-
-# 如果日志需要写入redis
-pip install "pyxxl[redis]"
-
-# 如果需要从.env加载配置
-pip install "pyxxl[dotenv]"
-
-# 安装所有功能
-pip install "pyxxl[all]"
 ```
 
 ```python
@@ -79,10 +70,17 @@ app.run_executor()
 
 如果executor服务无法直连xxl-admin，请参考[PYXXL配置](https://fcfangcc.github.io/pyxxl/latest/apis/config/)修改executor_listen_host
 
-## 监控指标
+## 其他功能
 
 ```shell
+# 如果日志需要写入redis
+pip install "pyxxl[redis]"
+# 如果需要从.env加载配置
+pip install "pyxxl[dotenv]"
+# 暴露metrics
 pip install "pyxxl[metrics]"
+# 安装所有功能
+pip install "pyxxl[all]"
 ```
 
 安装metrics扩展后，执行器会自动加载prometheus的指标监控功能
@@ -106,7 +104,7 @@ def sync_loop_demo():
         time.sleep(3)
     return "ok"
 
-# 如下代码会造成线程池里的线程被永远占用，timeout cancel全部不生效
+# ❌ 如下代码会造成线程池里的线程被永远占用，timeout cancel全部不生效
 @app.register(name="sync_func2")
 def sync_loop_demo2():
     while True:
