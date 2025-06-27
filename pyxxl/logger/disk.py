@@ -44,7 +44,6 @@ class DiskLog(LogBase):
 
     def get_logger(
         self,
-        _job_id: int,
         log_id: int,
         *,
         stdout: bool = True,
@@ -89,7 +88,7 @@ class DiskLog(LogBase):
             isEnd=is_end,
         )
 
-    async def read_task_logs(self, _job_id: int, log_id: int) -> str | None:
+    async def read_task_logs(self, log_id: int) -> str | None:
         p = Path(self.key(log_id))
         if not p.exists():
             return None

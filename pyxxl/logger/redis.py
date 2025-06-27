@@ -79,7 +79,6 @@ class RedisLog(LogBase):
 
     def get_logger(
         self,
-        _job_id: int,
         log_id: int,
         *,
         stdout: bool = True,
@@ -100,7 +99,7 @@ class RedisLog(LogBase):
     def key(self, log_id: int) -> str:
         return f"{self.prefix}:{self.app}:{log_id}"
 
-    async def read_task_logs(self, _job_id: int, log_id: int) -> str | None:
+    async def read_task_logs(self, log_id: int) -> str | None:
         key = self.key(log_id)
         if not self.rclient.exists(key):
             return None

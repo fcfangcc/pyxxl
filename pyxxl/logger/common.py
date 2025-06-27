@@ -22,7 +22,6 @@ class LogBase(ABC):
     @abstractmethod
     def get_logger(
         self,
-        job_id: int,
         log_id: int,
         *,
         stdout: bool = True,
@@ -34,7 +33,7 @@ class LogBase(ABC):
     async def get_logs(self, request: LogRequest) -> LogResponse: ...
 
     @abstractmethod
-    async def read_task_logs(self, job_id: int, log_id: int) -> str | None:
+    async def read_task_logs(self, log_id: int) -> str | None:
         """一次性读取某个log id的所有日志,主要用于单测"""
         ...
 

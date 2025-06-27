@@ -17,7 +17,7 @@ __all__ = ["DiskLog", "RedisLog", "SQLiteLog", "new_logger", "init_task_log"]
 def new_logger(
     factory: LogBase, job_id: int, log_id: int, *, expired_seconds: Optional[int] = None
 ) -> Generator[logging.Logger, None, None]:
-    logger = factory.get_logger(job_id, log_id, expired_seconds=expired_seconds)
+    logger = factory.get_logger(log_id, expired_seconds=expired_seconds)
     token = g.set_task_logger(logger)
     yield logger
     factory.after_running(logger)

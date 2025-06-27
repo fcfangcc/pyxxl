@@ -1,5 +1,4 @@
 import logging
-import sqlite3
 import threading
 import time
 import traceback
@@ -18,24 +17,19 @@ else:
     sqlite3 = try_import("sqlite3")
 
 
-def _dbpath(dbname: str, log_path: str) -> Path:
-    return Path(log_path) / f"pyxxl-{dbname}.db"
-
-
 class DB:
     def __init__(
         self,
-        dbname: str,
-        ttl: int,
+        expired_seconds: int,
         *,
         log_path: str = "./",
     ) -> None:
         super().__init__()
-        self.db_path = _dbpath(dbname, log_path)
+        self.db_path = Path(log_path) / "pyxxl.db"
         self.dblock = threading.Lock()
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.cursor = self.conn.cursor()
-        self.ttl = ttl
+        self.expired_seconds = expired_seconds
 
         # Create logs table if not exists
         self.cursor.execute("""
@@ -50,7 +44,8 @@ class DB:
         """)
         self.conn.commit()
 
-    def record(self, log_id: str, level: str, ms: int, message: str) -> None:
+    def record(self, log_id: str, level: str, ms: int, message: str, *, expired_seconds: Optional[int] = None) -> None:
+        expired_seconds = expired_seconds or self.expired_seconds
         try:
             with self.dblock:
                 self.cursor.execute(
@@ -58,7 +53,7 @@ class DB:
                     INSERT INTO logs (log_id, level, record, created_at_ms, expires_at)
                     VALUES (?, ?, ?, ?, ?)
                 """,
-                    (log_id, level, message, ms, int(time.time() + self.ttl)),
+                    (log_id, level, message, ms, int(time.time() + expired_seconds)),
                 )
                 self.conn.commit()
         except sqlite3.Error as e:
@@ -89,7 +84,8 @@ class DB:
             )
             return total, [i[0] for i in self.cursor.fetchall()]
 
-    def delete_expired(self, now_ts: int) -> None:
+    def delete_expired(self) -> None:
+        now_ts = round(time.time())
         with self.dblock:
             self.cursor.execute(
                 """
@@ -113,9 +109,10 @@ class DB:
 class SQLiteHandler(logging.Handler):
     terminator = "\n"
 
-    def __init__(self, db: DB) -> None:
+    def __init__(self, db: DB, expired_seconds: Optional[int] = None) -> None:
         super().__init__()
         self.db = db
+        self.expired_seconds = expired_seconds
 
     def emit(self, record: logging.LogRecord) -> None:
         """Emit a log record to SQLite database."""
@@ -124,7 +121,7 @@ class SQLiteHandler(logging.Handler):
         record.logId = log_id
         ms = round(record.created * 1000)
         log_message = self.format(record) + self.terminator
-        self.db.record(str(log_id), record.levelname, ms, log_message)
+        self.db.record(str(log_id), record.levelname, ms, log_message, expired_seconds=self.expired_seconds)
 
 
 class SQLiteLog(LogBase):
@@ -143,18 +140,10 @@ class SQLiteLog(LogBase):
         self.log_path = log_path
         self.log_tail_lines = log_tail_lines
         self.expired_seconds = round(expired_days * 3600 * 24)
-        self._db_map: dict[str, DB] = dict()
-
-    def _get_or_create_db(self, dbname: str, *, expired_seconds: Optional[int] = None) -> DB:
-        # todo: clean dead db instances
-        if dbname not in self._db_map:
-            db = DB(dbname, ttl=expired_seconds or self.expired_seconds, log_path=self.log_path)
-            self._db_map[dbname] = db
-        return self._db_map[dbname]
+        self._db = DB(expired_seconds=self.expired_seconds or self.expired_seconds, log_path=self.log_path)
 
     def get_logger(
         self,
-        job_id: int,
         log_id: int,
         *,
         stdout: bool = True,
@@ -165,8 +154,7 @@ class SQLiteLog(LogBase):
         logger.propagate = False
         logger.setLevel(level)
         handlers: list[logging.Handler] = [PyxxlStreamHandler()] if stdout else []
-        db = self._get_or_create_db(str(job_id), expired_seconds=expired_seconds)
-        handlers.append(SQLiteHandler(db))
+        handlers.append(SQLiteHandler(self._db, expired_seconds))
         for h in handlers:
             h.setFormatter(TASK_FORMATTER)
             h.setLevel(level)
@@ -176,12 +164,9 @@ class SQLiteLog(LogBase):
     async def get_logs(self, request: LogRequest) -> LogResponse:
         """Retrieve logs from the SQLite database."""
         log_id = request["logId"]
-        job_id = request["jobId"]
         from_line_num = request["fromLineNum"]
         limit = self.log_tail_lines
-
-        db = self._get_or_create_db(str(job_id))
-        total, records = db.query(str(log_id), from_line_num, limit)
+        total, records = self._db.query(str(log_id), from_line_num, limit)
         if total and len(records) == 0:
             to_line_num = from_line_num
             log_content = ""
@@ -199,9 +184,8 @@ class SQLiteLog(LogBase):
             isEnd=to_line_num >= total,
         )
 
-    async def read_task_logs(self, job_id: int, log_id: int) -> str | None:
-        db = self._get_or_create_db(str(job_id))
-        total, logs = db.query(str(log_id), 0, 100000)
+    async def read_task_logs(self, log_id: int) -> Optional[str]:
+        total, logs = self._db.query(str(log_id), 0, 100000)
         if total == 0:
             return None
 
@@ -209,8 +193,5 @@ class SQLiteLog(LogBase):
 
     async def expired_once(self, **kwargs: Any) -> bool:
         """Delete expired logs from the database."""
-        now_ts = round(time.time())
-        for db in self._db_map.values():
-            db.delete_expired(now_ts)
-
+        self._db.delete_expired()
         return True

@@ -60,7 +60,7 @@ class TestTaskLogger:
     ):
         async with mock_run_data(job_id, log_id), aiofiles.tempfile.TemporaryDirectory() as temp_dir:
             log = get_log(temp_dir)
-            logger = log.get_logger(job_id, log_id, stdout=False)
+            logger = log.get_logger(log_id, stdout=False)
             for i in range(1, 81):
                 logger.info(str(i))
 
@@ -75,7 +75,7 @@ class TestTaskLogger:
     async def test_logger(self, get_log: Callable[[str], LogBase], job_id: int, log_id: int):
         async with mock_run_data(job_id, log_id), aiofiles.tempfile.TemporaryDirectory() as temp_dir:
             log = get_log(temp_dir)
-            logger = log.get_logger(job_id, log_id, stdout=False)
+            logger = log.get_logger(log_id, stdout=False)
             try:
                 raise ValueError("test error")
             except ValueError as e:
@@ -83,7 +83,7 @@ class TestTaskLogger:
             logger.warning("test warning.")
             logger.handlers.clear()
 
-            read_data = await log.read_task_logs(job_id, log_id)
+            read_data = await log.read_task_logs(log_id)
             assert read_data
             for b in ["test error", "test warning", "ERROR", "WARNING"]:
                 assert b in read_data
@@ -92,20 +92,20 @@ class TestTaskLogger:
             assert "No such logid logs" in log_resp["logContent"]
 
     async def test_disk_expired(self, get_log: Callable[[str], LogBase], job_id: int, log_id: int):
-        expired_seconds = 5
+        expired_seconds = 3
         async with mock_run_data(job_id, log_id), aiofiles.tempfile.TemporaryDirectory() as temp_dir:
             log = get_log(temp_dir)
-            logger = log.get_logger(job_id, log_id, stdout=False, expired_seconds=expired_seconds)
+            logger = log.get_logger(log_id, stdout=False, expired_seconds=expired_seconds)
             logger.error("test error.")
             logger.warning("test warning.")
             logger.handlers.clear()
 
-            logs = await log.read_task_logs(job_id, log_id)
+            logs = await log.read_task_logs(log_id)
             assert logs is not None
-            await asyncio.sleep(expired_seconds)
+            await asyncio.sleep(expired_seconds + 0.5)
             # expired_seconds only for disk useful
             expired = await log.expired_once(expired_seconds=expired_seconds)
             if not expired:
                 pytest.skip("expired_once not implemented in this logger type")
-            logs = await log.read_task_logs(job_id, log_id)
+            logs = await log.read_task_logs(log_id)
             assert logs is None
