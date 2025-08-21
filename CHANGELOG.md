@@ -1,3 +1,6 @@
+### 0.4.4
+* 增加retry相关的几个参数，用于控制请求xxl-admin时的重试配置
+
 ### 0.4.2
 * 增加参数log_clean_interval
 * 删除本地日志时释放cpu权限，防止卡死loop

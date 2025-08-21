@@ -82,6 +82,12 @@ class ExecutorConfig:
 
     如果你的任务执行很频繁，建议减少这个时间间隔，比如设置为60秒，这样每分钟会清理一次过期的日志，避免一次性清理太多文件卡住主进程
     """
+    http_retry_times: int = 3
+    """xxl-admin的http请求重试次数. Default: 3"""
+    http_retry_duration: int = 5
+    """xxl-admin的http请求重试间隔时间,单位秒. Default: 3"""
+    http_timeout: int = 30
+    """xxl-admin的http请求超时时间,单位秒. Default: 10"""
 
     dotenv_try: bool = True
     dotenv_path: Optional[str] = None

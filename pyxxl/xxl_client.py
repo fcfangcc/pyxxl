@@ -28,7 +28,8 @@ class XXL:
         token: Optional[str] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         retry_times: int = 1,
-        retry_interval: int = 5,
+        retry_duration: int = 5,
+        http_timeout: int = 10,
         session: Optional[aiohttp.ClientSession] = None,
         logger: Optional[logging.Logger] = None,
         **kwargs: Any,
@@ -53,9 +54,10 @@ class XXL:
         self.session = session
 
         self.retry_times = retry_times
-        self.retry_interval = retry_interval
+        self.retry_duration = retry_duration
         self.headers = {"XXL-JOB-ACCESS-TOKEN": token} if token else {}
         self.logger = logger or xxl_client_logger
+        self.http_timeout = http_timeout
 
     async def registry(self, key: str, value: str) -> bool:
         payload = dict(registryGroup="EXECUTOR", registryKey=key, registryValue=value)
@@ -91,7 +93,9 @@ class XXL:
         retry_times = retry_times or self.retry_times
         while times < retry_times:
             try:
-                async with self.session.post(self.url_path + path, json=payload, headers=self.headers) as response:
+                async with self.session.post(
+                    self.url_path + path, json=payload, headers=self.headers, timeout=self.http_timeout
+                ) as response:
                     if response.status == 200:
                         r = Response(**(await response.json()))
                         if not r.ok:
@@ -101,9 +105,9 @@ class XXL:
             except aiohttp.ClientConnectionError as e:
                 times += 1
                 self.logger.warning(
-                    "Connection error {} times, retry after {}. {}".format(times, self.retry_interval, str(e))
+                    "Connection error {} times, retry after {}. {}".format(times, self.retry_duration, str(e))
                 )
-                await asyncio.sleep(self.retry_interval)
+                await asyncio.sleep(self.retry_duration)
 
         raise XXLClientError("Connection error after retry times {}".format(times))
 

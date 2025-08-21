@@ -85,7 +85,14 @@ class PyxxlRunner:
 
     def _get_xxl_clint(self) -> XXL:
         """for moke"""
-        return XXL(self.config.xxl_admin_baseurl, token=self.config.access_token, logger=self.config.executor_logger)
+        return XXL(
+            self.config.xxl_admin_baseurl,
+            token=self.config.access_token,
+            logger=self.config.executor_logger,
+            retry_times=self.config.http_retry_times,
+            retry_duration=self.config.http_retry_duration,
+            http_timeout=self.config.http_timeout,
+        )
 
     def _get_log(self) -> LogBase:
         if self.config.log_target == "disk":
