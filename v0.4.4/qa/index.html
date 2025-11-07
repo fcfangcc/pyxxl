@@ -442,9 +442,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#xxl-admin" class="md-nav__link">
     <span class="md-ellipsis">
-      调度任务成功，但回调时会重定向到登录
+      请求xxl-admin被重定向到登录
     </span>
   </a>
   
@@ -515,9 +515,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#xxl-admin" class="md-nav__link">
     <span class="md-ellipsis">
-      调度任务成功，但回调时会重定向到登录
+      请求xxl-admin被重定向到登录
     </span>
   </a>
   
@@ -552,9 +552,15 @@
 
 
 <h1 id="_1">常见问题与错误</h1>
-<h2 id="_2">调度任务成功，但回调时会重定向到登录</h2>
+<h2 id="xxl-admin">请求xxl-admin被重定向到登录</h2>
 <p>可能是xxl-job-admin服务的配置取消了上下文信息，导致默认的api接口变了Example的地址不可用</p>
-<p>可以根据排查 <a href="https://github.com/fcfangcc/pyxxl/issues/52">issues52</a></p>
+<p>可以根据 <a href="https://github.com/fcfangcc/pyxxl/issues/52">issues52</a> 排查</p>
+<p>错误信息可能包含类似的关键字</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">File</span> <span class="s2">&quot;/lib/python3.12/site-packages/aiohttp/client_reqrep.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1199</span><span class="p">,</span> <span class="ow">in</span> <span class="n">json</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">raise</span> <span class="n">ContentTypeError</span><span class="p">(</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">aiohttp</span><span class="o">.</span><span class="n">client_exceptions</span><span class="o">.</span><span class="n">ContentTypeError</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">message</span><span class="o">=</span><span class="s1">&#39;Attempt to decode JSON with unexpected mimetype: text/html;charset=utf-8&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="s1">&#39;http://xxxxx/toLogin&#39;</span>
+</code></pre></div>
 <h2 id="the-access-token-is-wrong">报错The access token is wrong</h2>
 <p>xxl-job-admin服务配置了token验证，按配置中说明的配置正确的token即可</p>
 
