@@ -4,7 +4,7 @@ authors = [{ name = "fcfangcc", email = "swjfc22@live.com" }]
 description = "A Python executor for XXL-jobs"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "0.4.5"
+version = "0.4.6"
 classifiers = [
   "Framework :: AsyncIO",
   "Topic :: Software Development",
