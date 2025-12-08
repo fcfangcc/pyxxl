@@ -55,7 +55,7 @@ class XXL:
 
         self.retry_times = retry_times
         self.retry_duration = retry_duration
-        self.headers = {"XXL-JOB-ACCESS-TOKEN": token, "XXL_RPC_ACCESS_TOKEN": token} if token else {}
+        self.headers = {"XXL-JOB-ACCESS-TOKEN": token, "XXL-RPC-ACCESS-TOKEN": token} if token else {}
         self.logger = logger or xxl_client_logger
         self.http_timeout = http_timeout
 
