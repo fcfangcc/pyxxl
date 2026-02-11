@@ -95,6 +95,7 @@ async def log(request: web.Request) -> web.Response:
         "msg": None,
         "content": await task_log.get_logs(data),
     }
+    response["data"] = response["content"]  # v3.3.0 changed response format,兼容之前版本
     return web.json_response(response)
 
 

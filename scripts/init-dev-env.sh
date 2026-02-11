@@ -5,8 +5,9 @@ set -x
 PORT='3306'
 PASSWD='xxlpasswd@123'
 USERNAME="xxluser"
-XXLIMAGE="xuxueli/xxl-job-admin:2.3.0"
-XXLSQLFILE="tables_xxl_job23.sql"
+XXL_VERSION="3.3.2"
+XXLIMAGE="xuxueli/xxl-job-admin:$XXL_VERSION"
+XXLSQLFILE="tables_xxl_job${XXL_VERSION//./}.sql"
 TOKEN="1234567890"
 
 # 如果Mac m2, 拉取镜像的时候需要加platform

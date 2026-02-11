@@ -27,9 +27,9 @@
 * 异步支持（推荐）
 * job-admin上查看日志
 
-## 适配的XXL-JOB版本
+## 已经测试过的XXL-JOB版本
 
-**2.4.0**,**2.3.0**,**2.2.0**
+**3.3.2**,**2.4.0**,**2.3.0**,**2.2.0**
 
 如遇到不兼容的情况请issue告诉我XXL-JOB版本和对应的问题我会尽量适配
 
@@ -147,8 +147,7 @@ admin/123456
 
 
 ```shell
-# if you need. set venv in project.
-pip install -e ".[dev,all]"
+uv sync --all-extras
 # 修改app.py中相关的配置信息,然后启动
 python example/executor_app.py
 ```
