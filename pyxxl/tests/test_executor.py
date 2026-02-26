@@ -10,17 +10,18 @@ from pyxxl.executor import Executor, JobHandler
 from pyxxl.schema import RunData
 
 job_handler = JobHandler()
+TASK_SLEEP_SECONDS = 2
 
 
 @job_handler.register
 async def pytest_executor_async():
-    await asyncio.sleep(2)
+    await asyncio.sleep(TASK_SLEEP_SECONDS)
     return "成功30"
 
 
 @job_handler.register
 def pytest_executor_sync():
-    time.sleep(2)
+    time.sleep(TASK_SLEEP_SECONDS)
     return "成功30"
 
 
@@ -228,3 +229,35 @@ async def test_sync_timeout(executor: Executor, job_id: int, log_id: int):
     )
     await executor.graceful_close(10)
     assert executor.xxl_client.callback_result.get(log_id) == 500
+
+
+@pytest.mark.asyncio
+async def test_many_jobs_running(executor: Executor, job_id: int, log_id_iter: Iterator[int]):
+    """测试多个jobId的任务同时运行，确保它们之间不会互相影响"""
+    executor.reset_handler(job_handler)
+    executor.xxl_client.clear_result()
+
+    task1 = RunData(
+        logId=next(log_id_iter),
+        jobId=job_id,
+        executorHandler=HANDLER_NAMES[0],
+        executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
+    )
+    task2 = RunData(
+        logId=next(log_id_iter),
+        jobId=job_id + 10086,
+        executorHandler=HANDLER_NAMES[1],
+        executorBlockStrategy=executorBlockStrategy.SERIAL_EXECUTION.value,
+    )
+    start = time.time()
+    await asyncio.gather(
+        executor.run_job(task1),
+        executor.run_job(task2),
+    )
+    await executor.graceful_close(20)
+    duration = time.time() - start
+    print(duration)
+    assert duration < TASK_SLEEP_SECONDS * 2, f"任务执行时间过长，可能存在串行执行的情况，duration={duration}"
+
+    assert executor.xxl_client.callback_result.get(task1.logId) == 200
+    assert executor.xxl_client.callback_result.get(task2.logId) == 200
