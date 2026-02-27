@@ -136,8 +136,8 @@ class Executor:
         self.queue: Dict[int, asyncio.Queue[RunData]] = defaultdict(
             lambda: asyncio.Queue(maxsize=self.config.task_queue_length)
         )
-        # todo: lock for jobId
-        self.lock = asyncio.Lock()
+        # 为每个jobId创建独立的锁，避免不同job之间的锁竞争
+        self._job_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self.thread_pool = ThreadPoolExecutor(
             max_workers=self.config.max_workers,
             thread_name_prefix="pyxxl_pool",
@@ -151,10 +151,43 @@ class Executor:
     def executor_logger(self) -> logging.Logger:
         return self.config.executor_logger
 
+    def _get_job_lock(self, job_id: int) -> asyncio.Lock:
+        """获取指定jobId的锁"""
+        return self._job_locks[job_id]
+
     def _create_task(self, data: RunData) -> XXLTask:
         """创建一个任务"""
         task = self.loop.create_task(self._run(data), name=f"{data.jobId}_{data.logId}")
         return XXLTask(task, data)
+
+    async def _handle_discard_later(self, data: RunData) -> str:
+        """处理DISCARD_LATER策略：丢弃后来的任务"""
+        raise error.JobDuplicateError("The same job [%s] is already executing and this has been discarded." % data)
+
+    async def _handle_cover_early(self, data: RunData) -> str:
+        """处理COVER_EARLY策略：覆盖早期任务"""
+        msg = "Job {} BlockStrategy is COVER_EARLY, logId {} replaced.".format(data.jobId, data.logId)
+        self.executor_logger.warning(msg)
+        await self.get_queue(data.jobId).put(data)
+        _spawn_task(self.loop.create_task(self.cancel_job(data.jobId, include_queue=False)))
+        return msg
+
+    async def _handle_serial_execution(self, data: RunData) -> str:
+        """处理SERIAL_EXECUTION策略：串行执行，加入队列"""
+        queue = self.get_queue(data.jobId)
+        if queue.full():
+            msg = "Job {job_id} is SERIAL, queue length more than {maxsize}. Job {job} discard!".format(
+                job_id=data.jobId, job=data, maxsize=queue.maxsize
+            )
+            self.executor_logger.error(msg)
+            raise error.JobDuplicateError(msg)
+        else:
+            msg = "job {job_id} is in queue, logId {log_id} ranked {ranked}th [max={maxsize}]...".format(
+                job_id=data.jobId, log_id=data.logId, ranked=queue.qsize() + 1, maxsize=queue.maxsize
+            )
+            self.executor_logger.info(msg)
+            await queue.put(data)
+            return msg
 
     async def run_job(self, data: RunData) -> str:
         handler_obj = self.handler.get(data.executorHandler)
@@ -162,40 +195,27 @@ class Executor:
             self.executor_logger.warning("handler %s not found." % data.executorHandler)
             raise error.JobNotFoundError("handler %s not found." % data.executorHandler)
 
-        # 一个执行器同时只能执行一个jobId相同的任务
-        async with self.lock:
+        # 使用jobId对应的锁，避免全局锁竞争
+        job_lock = self._get_job_lock(data.jobId)
+        async with job_lock:
+            # 检查该jobId是否正在运行或队列中有任务
             current_task = self.tasks.get(data.jobId)
-            if not current_task and self.get_queue(data.jobId).empty():
+            queue = self.get_queue(data.jobId)
+
+            # 如果没有运行任务且队列为空，直接创建并运行
+            if not current_task and queue.empty():
                 self.tasks[data.jobId] = self._create_task(data)
                 return "Running"
 
+            # 任务冲突，根据阻塞策略处理
             self.executor_logger.warning("jobId {} is running. current_task={}".format(data.jobId, current_task))
-            # pylint: disable=no-else-raise
+
             if data.executorBlockStrategy == executorBlockStrategy.DISCARD_LATER.value:
-                raise error.JobDuplicateError(
-                    "The same job [%s] is already executing and this has been discarded." % data
-                )
+                return await self._handle_discard_later(data)
             elif data.executorBlockStrategy == executorBlockStrategy.COVER_EARLY.value:
-                msg = "Job {} BlockStrategy is COVER_EARLY, logId {} replaced.".format(data.jobId, data.logId)
-                self.executor_logger.warning(msg)
-                await self.get_queue(data.jobId).put(data)
-                _spawn_task(self.loop.create_task(self.cancel_job(data.jobId, include_queue=False)))
-                return msg
+                return await self._handle_cover_early(data)
             elif data.executorBlockStrategy == executorBlockStrategy.SERIAL_EXECUTION.value:
-                queue = self.get_queue(data.jobId)
-                if queue.full():
-                    msg = "Job {job_id} is  SERIAL, queue length more than {maxsize}.Job {job}  discard!".format(
-                        job_id=data.jobId, job=data, maxsize=queue.maxsize
-                    )
-                    self.executor_logger.error(msg)
-                    raise error.JobDuplicateError(msg)
-                else:
-                    msg = "job {job_id} is in queen, logId {log_id} ranked {ranked}th [max={maxsize}]...".format(
-                        job_id=data.jobId, log_id=data.logId, ranked=queue.qsize() + 1, maxsize=queue.maxsize
-                    )
-                    self.executor_logger.info(msg)
-                    await queue.put(data)
-                    return msg
+                return await self._handle_serial_execution(data)
             else:
                 raise error.JobParamsError(
                     "unknown executorBlockStrategy [%s]." % data.executorBlockStrategy,
@@ -205,21 +225,32 @@ class Executor:
     async def cancel_job(self, job_id: int, include_queue: bool = True) -> None:
         await asyncio.sleep(0.01)  # delay for pytest
         self.executor_logger.warning("start kill job: job_id={}".format(job_id))
-        async with self.lock:
+
+        job_lock = self._get_job_lock(job_id)
+        task_to_cancel = None
+
+        # 在锁内进行队列清理和任务标记
+        async with job_lock:
+            # 清空队列
             if include_queue:
                 queue = self.get_queue(job_id)
                 while not queue.empty():
                     data = queue.get_nowait()
-                    self.executor_logger.warning("Discard jobId {} from queue,data: {}".format(job_id, data))
+                    self.executor_logger.warning("Discard jobId {} from queue, data: {}".format(job_id, data))
 
-            task = self.tasks.get(job_id, None)
-            if task:
+            # 获取需要取消的任务
+            task_to_cancel = self.tasks.get(job_id, None)
+            if task_to_cancel:
+                task_to_cancel.cancel()
+
+        # 在锁外等待任务完成，避免死锁
+        # 因为任务的finally块中也需要获取同一个锁
+        if task_to_cancel:
+            try:
                 # https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel
-                task.cancel()
-                try:
-                    await task.task
-                except asyncio.CancelledError:
-                    self.executor_logger.warning("Job %s cancelled." % job_id)
+                await task_to_cancel.task
+            except asyncio.CancelledError:
+                self.executor_logger.warning("Job %s cancelled." % job_id)
 
     async def is_running(self, job_id: int) -> bool:
         return job_id in self.tasks
@@ -228,6 +259,7 @@ class Executor:
         handler = self.handler.get(data.executorHandler)
         assert handler
         g.set_xxl_run_data(data)
+
         with new_logger(self.logger_factory, data.logId) as task_logger:
             start_time = int(time.time() * 1000)
             try:
@@ -252,32 +284,36 @@ class Executor:
                 await self.xxl_client.callback(data.logId, start_time, code=500, msg=str(err))
                 self.failed_callback("exception")
             finally:
-                if self.lock.locked():
+                # 使用jobId对应的锁来保护finish操作
+                job_lock = self._get_job_lock(data.jobId)
+                async with job_lock:
                     await self._finish(data.jobId)
-                else:
-                    async with self.lock:
-                        await self._finish(data.jobId)
 
     async def _finish(self, job_id: int) -> None:
-        # 所有移除tasks的操作全部在这里执行
         finish_task = self.tasks.pop(job_id, None)
         self.executor_logger.info("Finish task {}".format(finish_task))
+
+        # 检查队列中是否还有等待的任务
         queue = self.get_queue(job_id)
         if not queue.empty():
             data = queue.get_nowait()
             self.executor_logger.info(
                 "Get data from queue jobId={}, after queueSize={}, data={}".format(job_id, queue.qsize(), data)
             )
+            # 启动队列中的下一个任务
             self.tasks[job_id] = self._create_task(data)
             queue.task_done()
 
     async def shutdown(self) -> None:
+        """立即关闭执行器，取消所有任务"""
         await asyncio.sleep(0.01)  # sleep for pytest
 
-        async with self.lock:
-            self.queue.clear()
-            for _, task in self.tasks.items():
-                task.task.cancel()
+        # 清空所有队列
+        self.queue.clear()
+
+        # 取消所有正在运行的任务
+        for _, task in self.tasks.items():
+            task.task.cancel()
 
     async def graceful_close(self, timeout: int = 60) -> None:
         """优雅关闭"""
