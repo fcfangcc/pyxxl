@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import threading
 import time
@@ -40,7 +41,7 @@ class HandlerInfo:
     def __post_init__(self) -> None:
         self.is_async = asyncio.iscoroutinefunction(self.handler)
 
-    async def start(self, timeout: int) -> Any:
+    async def start(self, timeout: int, *, pool: Optional[ThreadPoolExecutor] = None) -> Any:
         if self.is_async:
             return await asyncio.wait_for(self.handler(), timeout=timeout)
         # https://stackoverflow.com/questions/71416383/python-asyncio-cancelling-a-to-thread-task-wont-stop-the-thread
@@ -48,7 +49,9 @@ class HandlerInfo:
         event = threading.Event()
         g.set_cancel_event(event)
         try:
-            return await asyncio.wait_for(asyncio.to_thread(self.handler), timeout=timeout)
+            loop = asyncio.get_running_loop()
+            ctx = contextvars.copy_context()
+            return await asyncio.wait_for(loop.run_in_executor(pool, ctx.run, self.handler), timeout=timeout)
         except (asyncio.exceptions.TimeoutError, asyncio.CancelledError) as e:
             event.set()
             # logger.debug("Get error for sync task {}".format(self))
@@ -131,7 +134,10 @@ class Executor:
         self.config = config
 
         self.handler: JobHandler = handler or JobHandler()
-        self.loop = loop or asyncio.get_event_loop()
+        try:
+            self.loop = loop or asyncio.get_running_loop()
+        except RuntimeError:
+            self.loop = loop or asyncio.get_event_loop()
         self.tasks: Dict[int, XXLTask] = {}
         self.queue: Dict[int, asyncio.Queue[RunData]] = defaultdict(
             lambda: asyncio.Queue(maxsize=self.config.task_queue_length)
@@ -145,7 +151,6 @@ class Executor:
         self.logger_factory = logger_factory or DiskLog(self.config.log_local_dir)
         self.successed_callback = successed_callback or (lambda: 1)
         self.failed_callback = failed_callback or (lambda x: 1)
-        self.loop.set_default_executor(self.thread_pool)
 
     @property
     def executor_logger(self) -> logging.Logger:
@@ -265,7 +270,7 @@ class Executor:
             try:
                 task_logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
                 timeout = data.executorTimeout or self.config.task_timeout
-                result = await handler.start(timeout)
+                result = await handler.start(timeout, pool=self.thread_pool)
                 task_logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
                 await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
                 self.successed_callback()

@@ -67,6 +67,8 @@ async def run(request: web.Request) -> web.Response:
         return web.json_response(dict(code=500, msg=e.message))
     except error.JobNotFoundError as e:
         return web.json_response(dict(code=500, msg=e.message))
+    except Exception as e:
+        return web.json_response(dict(code=500, msg=str(e)))
 
     return web.json_response(dict(code=200, msg=msg))
 

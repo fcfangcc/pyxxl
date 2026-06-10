@@ -27,6 +27,10 @@ class GlobalVars:
     def set_task_logger(cls, logger: logging.Logger) -> Token:
         return cls._LOGGER.set(logger)
 
+    @classmethod
+    def reset_task_logger(cls, token: Token) -> None:
+        cls._LOGGER.reset(token)
+
     @property
     def logger(self) -> logging.Logger:  # pragma: no cover
         return self._LOGGER.get()
@@ -34,6 +38,10 @@ class GlobalVars:
     @classmethod
     def set_cancel_event(cls, event: threading.Event) -> None:
         cls._EVENT.set(event)
+
+    @classmethod
+    def reset_cancel_event(cls) -> None:
+        cls._EVENT.set(None)  # type: ignore[arg-type]
 
     @property
     def cancel_event(self) -> threading.Event:  # pragma: no cover

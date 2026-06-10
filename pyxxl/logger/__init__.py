@@ -15,4 +15,4 @@ def new_logger(factory: LogBase, log_id: int) -> Generator[logging.Logger, None,
     token = g.set_task_logger(logger)
     yield logger
     factory.after_running(logger)
-    g._LOGGER.reset(token)
+    g.reset_task_logger(token)

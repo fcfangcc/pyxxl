@@ -34,7 +34,10 @@ class XXL:
         logger: Optional[logging.Logger] = None,
         **kwargs: Any,
     ) -> None:
-        self.loop = loop or asyncio.get_event_loop()
+        try:
+            self.loop = loop or asyncio.get_running_loop()
+        except RuntimeError:
+            self.loop = loop or asyncio.get_event_loop()
         kwargs["loop"] = self.loop
 
         _admin_url: URL = URL(admin_url)
@@ -94,7 +97,10 @@ class XXL:
         while times < retry_times:
             try:
                 async with self.session.post(
-                    self.url_path + path, json=payload, headers=self.headers, timeout=self.http_timeout
+                    self.url_path + path,
+                    json=payload,
+                    headers=self.headers,
+                    timeout=aiohttp.ClientTimeout(total=self.http_timeout),
                 ) as response:
                     if response.status == 200:
                         r = Response(**(await response.json()))

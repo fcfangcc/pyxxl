@@ -78,8 +78,14 @@ class PyxxlRunner:
         # https://github.com/xuxueli/xxl-job/issues/2090
         try:
             while True:
-                await xxl_client.registry(self.config.executor_app_name, self.config.executor_baseurl)
-                await asyncio.sleep(10)
+                try:
+                    await xxl_client.registry(self.config.executor_app_name, self.config.executor_baseurl)
+                    await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    self.config.executor_logger.exception("Register task error, retry after 10s.")
+                    await asyncio.sleep(10)
         finally:
             self.config.executor_logger.warning("Register task is exit.")
 
