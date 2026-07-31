@@ -261,3 +261,49 @@ async def test_many_jobs_running(executor: Executor, job_id: int, log_id_iter: I
 
     assert executor.xxl_client.callback_result.get(task1.logId) == 200
     assert executor.xxl_client.callback_result.get(task2.logId) == 200
+
+
+@pytest.mark.asyncio
+async def test_timeout_with_zero(executor: Executor, job_id: int, log_id: int):
+    """#Issue100"""
+    sync_handler = JobHandler()
+
+    @sync_handler.register(name="pytest_executor_sync", replace=True)
+    async def pytest_executor_sync():
+        await asyncio.sleep(10)
+
+    executor.reset_handler(sync_handler)
+    await executor.run_job(
+        RunData(
+            logId=log_id,
+            jobId=job_id,
+            executorHandler="pytest_executor_sync",
+            executorBlockStrategy="OTHER",
+            executorTimeout=0,
+        )
+    )
+    with pytest.raises(asyncio.TimeoutError):
+        await executor.graceful_close(2)
+
+
+@pytest.mark.asyncio
+async def test_timeout_gt_zero(executor: Executor, job_id: int, log_id: int):
+    """#Issue100"""
+    sync_handler = JobHandler()
+
+    @sync_handler.register(name="pytest_executor_sync", replace=True)
+    async def pytest_executor_sync():
+        await asyncio.sleep(10)
+
+    executor.reset_handler(sync_handler)
+    await executor.run_job(
+        RunData(
+            logId=log_id,
+            jobId=job_id,
+            executorHandler="pytest_executor_sync",
+            executorBlockStrategy="OTHER",
+            executorTimeout=2,
+        )
+    )
+    await executor.graceful_close(3)
+    assert executor.xxl_client.callback_result.get(log_id) == 500

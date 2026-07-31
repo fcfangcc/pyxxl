@@ -61,7 +61,10 @@ class ExecutorConfig:
     max_workers: int = 30
     """执行器线程池（执行同步任务时使用）. Default: 30"""
     task_timeout: int = 60 * 10
-    """任务的默认超时时间,如果调度器传了以参数executorTimeout为准. Default: 60 * 10"""
+    """
+    任务的默认超时时间,如果调度器传参executorTimeout不为None以传参为准. Default: 60 * 10.
+    如果executorTimeout<=0,则表示不限制超时时间,任务会一直执行下去,直到执行完成.
+    """
     task_queue_length: int = 30
     """任务的队列长度.单机串行的队列长度,当阻塞的任务大于此值时会抛弃. Default: 30"""
     graceful_close: bool = False

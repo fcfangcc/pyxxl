@@ -1,3 +1,7 @@
+### 0.4.8
+* 修复 executorTimeout=0 时未正确禁用超时的问题（#100）
+* executorTimeout 取值逻辑：0 表示无超时，>0 使用指定超时，未设置则使用 task_timeout
+
 ### 0.4.7
 * 兼容xxl-job 3.3.2版本
 

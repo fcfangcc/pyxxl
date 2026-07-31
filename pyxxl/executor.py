@@ -41,7 +41,7 @@ class HandlerInfo:
     def __post_init__(self) -> None:
         self.is_async = asyncio.iscoroutinefunction(self.handler)
 
-    async def start(self, timeout: int, *, pool: Optional[ThreadPoolExecutor] = None) -> Any:
+    async def start(self, timeout: int | None, *, pool: Optional[ThreadPoolExecutor] = None) -> Any:
         if self.is_async:
             return await asyncio.wait_for(self.handler(), timeout=timeout)
         # https://stackoverflow.com/questions/71416383/python-asyncio-cancelling-a-to-thread-task-wont-stop-the-thread
@@ -269,7 +269,12 @@ class Executor:
             start_time = int(time.time() * 1000)
             try:
                 task_logger.info("Start job jobId=%s logId=%s [%s]" % (data.jobId, data.logId, data))
-                timeout = data.executorTimeout or self.config.task_timeout
+                timeout: None | int = self.config.task_timeout
+                if data.executorTimeout is not None:
+                    if data.executorTimeout > 0:
+                        timeout = data.executorTimeout
+                    else:
+                        timeout = None
                 result = await handler.start(timeout, pool=self.thread_pool)
                 task_logger.info("Job finished jobId=%s logId=%s" % (data.jobId, data.logId))
                 await self.xxl_client.callback(data.logId, start_time, code=200, msg=result)
