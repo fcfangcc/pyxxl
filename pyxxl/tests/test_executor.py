@@ -270,7 +270,7 @@ async def test_timeout_with_zero(executor: Executor, job_id: int, log_id: int):
 
     @sync_handler.register(name="pytest_executor_sync", replace=True)
     async def pytest_executor_sync():
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
 
     executor.reset_handler(sync_handler)
     await executor.run_job(
@@ -283,7 +283,7 @@ async def test_timeout_with_zero(executor: Executor, job_id: int, log_id: int):
         )
     )
     with pytest.raises(asyncio.TimeoutError):
-        await executor.graceful_close(2)
+        await executor.graceful_close(1)
 
 
 @pytest.mark.asyncio
@@ -293,9 +293,21 @@ async def test_timeout_gt_zero(executor: Executor, job_id: int, log_id: int):
 
     @sync_handler.register(name="pytest_executor_sync", replace=True)
     async def pytest_executor_sync():
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
 
     executor.reset_handler(sync_handler)
+    await executor.run_job(
+        RunData(
+            logId=log_id,
+            jobId=job_id,
+            executorHandler="pytest_executor_sync",
+            executorBlockStrategy="OTHER",
+            executorTimeout=1,
+        )
+    )
+    await executor.graceful_close(3)
+    assert executor.xxl_client.callback_result.get(log_id) == 500
+
     await executor.run_job(
         RunData(
             logId=log_id,
